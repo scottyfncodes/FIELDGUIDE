@@ -3,24 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Colorado Trail Atlas</title>
-    <meta name="description" content="A USGS quad-sheet trail atlas for the Colorado Front Range." />
+    <title>CO Trail Atlas</title>
+    <meta name="description" content="A field atlas of 47 hand-picked Colorado trails — map, drive times, trailhead forecasts and your own hiking log." />
 
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#7a916a" />
+    <meta name="theme-color" content="#1F3D2B" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
 
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Trail Atlas" />
     <link rel="apple-touch-icon" href="/icon-180.png" />
 
-    <meta property="og:title" content="Colorado Trail Atlas" />
-    <meta property="og:description" content="Front Range trails with a USGS quad-sheet feel." />
+    <meta property="og:title" content="CO Trail Atlas" />
+    <meta property="og:description" content="A field atlas of hand-picked Colorado trails." />
     <meta property="og:image" content="/icon-512.png" />
     <meta property="og:type" content="website" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" />
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="./main.tsx"></script>
+    <noscript>CO Trail Atlas needs JavaScript to draw the map.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
