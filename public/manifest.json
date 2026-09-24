@@ -1,0 +1,17 @@
+{
+  "id": "/",
+  "name": "CO Trail Atlas",
+  "short_name": "Trail Atlas",
+  "description": "A field atlas of hand-picked Colorado trails — map, drive times, trailhead forecasts and your own hiking log.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#F7F3E7",
+  "theme_color": "#1F3D2B",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
