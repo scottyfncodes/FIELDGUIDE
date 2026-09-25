@@ -2,7 +2,7 @@
    - Pages: network first (so deploys show up), cached copy when offline.
    - Built assets (hashed filenames), icons, fonts: cache first.
    - The forecast API is never cached here; the app keeps its own copy. */
-const CACHE = "atlas-v1";
+const CACHE = "atlas-v2"; // bump when cached shell files (e.g. icons) change
 const SHELL = ["/", "/manifest.json", "/icon-192.png", "/icon-180.png"];
 
 self.addEventListener("install", (e) => {
