@@ -40,6 +40,7 @@ npm run dev          # http://localhost:5173
 | `npm test` | Vitest: data integrity, logic, and component tests of the real UI flows |
 | `npm run test:e2e` | Playwright against the production build: iPhone 13, iPhone SE, desktop |
 | `npm run check` | All of the above |
+| `npm run icons` | Re-render every app icon from `design/icon.svg` |
 
 ## Layout
 
