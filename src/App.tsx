@@ -63,7 +63,7 @@ export default function App() {
   };
 
   const locateMe = () => {
-    if (!navigator.geolocation) { setLocErr("Location isn't available here — pick a town instead."); return; }
+    if (!navigator.geolocation) { setLocErr("Location isn't available here. Pick a town instead."); return; }
     setLocBusy(true); setLocErr(null);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -72,7 +72,7 @@ export default function App() {
       },
       () => {
         setLocBusy(false);
-        setLocErr("Couldn't read your location — pick a town instead.");
+        setLocErr("Couldn't read your location. Pick a town instead.");
       },
       { timeout: 10000, maximumAge: 10 * 60 * 1000 },
     );
@@ -86,7 +86,7 @@ export default function App() {
       setWx(payload);
       saveKey(WX_KEY, payload);
     } catch {
-      setWxErr(navigator.onLine === false ? "Offline — forecast will load when you have signal." : "Couldn't reach the forecast — tap to retry.");
+      setWxErr(navigator.onLine === false ? "Offline. The forecast will load when you have signal." : "Couldn't reach the forecast. Tap to retry.");
     } finally {
       setWxBusy(false);
     }
@@ -358,7 +358,7 @@ export default function App() {
 
           <footer className="ft">
             <p>
-              A curated set of {TRAILS.length} Colorado classics — not every trail in the state. Drive times are
+              A curated set of {TRAILS.length} Colorado classics, not every trail in the state. Drive times are
               straight-line estimates, trail times are book-time estimates, and forecasts are for the trailhead.
               Roads, permits and closures change: check with the land manager and a real forecast before you go.
             </p>

@@ -23,7 +23,7 @@ export function ringMiles(hours: number): number {
 }
 
 export function fmtDrive(min: number | null): string {
-  if (min == null) return "—";
+  if (min == null) return "–";
   if (min < 60) return `${Math.max(5, Math.round(min / 5) * 5)} min`;
   const h = Math.floor(min / 60), m = Math.round((min % 60) / 5) * 5;
   if (m === 0) return `${h} hr`;
