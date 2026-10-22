@@ -2,7 +2,7 @@
   "id": "/",
   "name": "CO Trail Atlas",
   "short_name": "Trail Atlas",
-  "description": "A field atlas of hand-picked Colorado trails — map, drive times, trailhead forecasts and your own hiking log.",
+  "description": "A field atlas of hand-picked Colorado trails: map, drive times, trailhead forecasts and your own hiking log.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

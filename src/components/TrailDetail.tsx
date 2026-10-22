@@ -50,11 +50,11 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
   const share = async () => {
     const url = `${location.origin}${location.pathname}#trail=${t.id}`;
     try {
-      if (navigator.share) { await navigator.share({ title: t.name, text: `${t.name} — CO Trail Atlas`, url }); return; }
+      if (navigator.share) { await navigator.share({ title: t.name, text: `${t.name} | CO Trail Atlas`, url }); return; }
       await navigator.clipboard.writeText(url);
       setShareMsg("Link copied");
     } catch (e) {
-      if ((e as Error)?.name !== "AbortError") setShareMsg("Couldn't share — copy the address bar instead");
+      if ((e as Error)?.name !== "AbortError") setShareMsg("Couldn't share. Copy the address bar instead.");
     }
     setTimeout(() => setShareMsg(null), 2500);
   };
@@ -105,7 +105,7 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
             <p className="det-wx-line">
               {w.summary} · {w.hi}° / {w.lo}° · wind to {w.wind} mph · {w.precip}% chance of precip
             </p>
-            <p className="det-wx-note">Forecast for the trailhead's grid cell — summits run colder and windier.</p>
+            <p className="det-wx-note">Forecast for the trailhead's grid cell. Summits run colder and windier.</p>
           </>
         ) : (
           <p className="det-wx-line">No forecast loaded yet. It fills in automatically when you're online.</p>
@@ -136,7 +136,7 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
         <button type="button" className={"done-toggle" + (p.done ? " on" : "")} aria-pressed={!!p.done}
           onClick={() => onPatch({ done: !p.done })}>
           <span className={"box big" + (p.done ? " box-on" : "")} aria-hidden="true">{p.done ? "✓" : ""}</span>
-          {p.done ? "Hiked it — logged" : "Mark as hiked"}
+          {p.done ? "Hiked it: logged" : "Mark as hiked"}
         </button>
         <div className="myrating">
           <span id="rating-lbl">My rating</span>
@@ -157,7 +157,7 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
 
       {hasApres && (
         <section className="det-sec apres">
-          <h3>After — near {area!.label}</h3>
+          <h3>After: near {area!.label}</h3>
           <div className="apres-cols">
             {!!area!.brew?.length && (
               <div>
@@ -172,7 +172,7 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
               </div>
             )}
           </div>
-          <p className="apres-note">Local picks — hours and owners change, so check before you go.</p>
+          <p className="apres-note">Local picks. Hours and owners change, so check before you go.</p>
         </section>
       )}
     </article>

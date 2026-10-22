@@ -76,6 +76,6 @@ export function verdict(w: Weather | null | undefined): Verdict | null {
 
 export const VERDICT_TEXT: Record<Verdict, string> = {
   GOOD: "Good day to hike",
-  FAIR: "Hikeable — watch conditions",
-  POOR: "Rough day — consider another trail",
+  FAIR: "Hikeable, watch conditions",
+  POOR: "Rough day, consider another trail",
 };

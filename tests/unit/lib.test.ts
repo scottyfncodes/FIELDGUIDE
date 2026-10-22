@@ -24,7 +24,7 @@ describe("geo", () => {
     expect(golden).toBeLessThan(durango);
     expect(fmtDrive(golden)).toMatch(/min$/);
     expect(fmtDrive(durango)).toMatch(/hr/);
-    expect(fmtDrive(null)).toBe("—");
+    expect(fmtDrive(null)).toBe("–");
     expect(fmtDrive(118)).toBe("2 hr"); // rounds up across the hour cleanly
     expect(fmtDrive(2)).toBe("5 min");
   });
