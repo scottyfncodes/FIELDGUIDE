@@ -17,6 +17,7 @@ export function Quests() {
   const done = rows.filter((r) => r.p.done).length;
   return (
     <div className="screen quests">
+      <p className="screen-eyebrow" aria-hidden="true">No. 4 · Field assignments</p>
       <h2 className="screen-title">Quests</h2>
       <p className="screen-lede">Optional things to look for. Progress comes only from finds and outings you've saved, so there's nothing to tap through. {done ? `${done} of ${QUESTS.length} complete.` : ""}</p>
       <ul className="quest-list">

@@ -33,6 +33,19 @@
   --fol-past: #84482A;
   --night: #22304D;
   --card: #FFFDF6;
+  /* storybook palette: old botanical plates, lodge paint, travel posters */
+  --forest: #1C3326;
+  --sage: #A3B596;
+  --celadon: #E3EBDB;
+  --ivory: #FCF8EE;
+  --mustard: #D3A23F;
+  --marigold: #E7B34A;
+  --terracotta: #A9532F;
+  --powder: #B7CEDC;
+  --sky: #DCE7EE;
+  --pink: #E6BDB6;
+  --burgundy: #6E2A35;
+  --display: "Jost", "Futura", "Century Gothic", var(--sans);
 }
 
 * { box-sizing: border-box; }
@@ -1049,4 +1062,190 @@ h3 .prov { margin-left: 6px; }
 }
 @media (max-width: 380px) {
   .row-plate { width: 40px; height: 40px; }
+}
+
+/* ============================================================
+   STORYBOOK CINEMA: the quad sheet, framed like a film.
+   Every tab and sheet is a scene with its own color block,
+   set on [data-scene]. Jost (a Futura cut) is for title cards
+   and intertitles only; Archivo and Plex Mono still do the work.
+   Foliage colors stay reserved for foliage status.
+   ============================================================ */
+[data-scene] {
+  --scene: var(--pine); --scene-ink: var(--ivory); --scene-accent: var(--marigold);
+  --scene-soft: var(--paper-2); --scene-deep: var(--pine);
+}
+[data-scene="identify"] {
+  --scene: var(--powder); --scene-ink: var(--ink); --scene-accent: var(--mustard);
+  --scene-soft: var(--sky); --scene-deep: #3D6A88;
+}
+[data-scene="atlas"], [data-scene="botany"] {
+  --scene: var(--sage); --scene-ink: var(--ink); --scene-accent: var(--terracotta);
+  --scene-soft: var(--celadon); --scene-deep: var(--terracotta);
+}
+[data-scene="quests"] {
+  --scene: var(--mustard); --scene-ink: var(--ink); --scene-accent: var(--burgundy);
+  --scene-soft: #F4E9CC; --scene-deep: var(--burgundy);
+}
+[data-scene="color"] {
+  --scene: var(--burgundy); --scene-ink: var(--ivory); --scene-accent: var(--pink);
+  --scene-soft: #F3E4E0; --scene-deep: var(--burgundy);
+}
+[data-scene="sky"] {
+  --scene: var(--night); --scene-ink: var(--ivory); --scene-accent: var(--powder);
+  --scene-soft: #E3E8F0; --scene-deep: var(--night);
+}
+
+/* the app bar takes the scene's color; the change is the cut between scenes */
+.appbar { background: var(--scene); color: var(--scene-ink); border-bottom: 3px double var(--ink); transition: background-color 0.3s, color 0.3s; }
+.brand { justify-content: flex-start; }
+.brand h1 { font-family: var(--display); font-weight: 600; font-size: 16px; letter-spacing: 0.16em; font-stretch: normal; }
+@media (max-width: 430px) { .brand h1 { font-size: 15px; letter-spacing: 0.1em; } }
+.brand-mark { color: var(--scene-accent); }
+.app[data-scene="identify"] .brand-mark, .app[data-scene="atlas"] .brand-mark, .app[data-scene="quests"] .brand-mark { color: var(--scene-deep); }
+.tally b { color: var(--scene-accent); }
+.wx-btn { color: inherit; border-color: currentColor; }
+.wx-btn:hover { background: rgba(252, 248, 238, 0.12); }
+
+/* ---------- home: the opening title card ---------- */
+.title-card {
+  /* compact on phones so the map still opens above the fold */
+  position: relative; overflow: hidden; height: clamp(100px, 14svh, 144px); text-align: center;
+  background: var(--powder); border-bottom: 3px double var(--ink);
+}
+.tc-sky { position: absolute; inset: 0; }
+.tc-sun {
+  position: absolute; left: 50%; bottom: 42px; width: 54px; height: 54px; margin-left: -27px;
+  border-radius: 50%; background: var(--marigold);
+  box-shadow: 0 0 0 6px var(--powder), 0 0 0 7.5px rgba(36, 30, 18, 0.3);
+}
+.tc-range { position: absolute; left: 50%; bottom: 24px; margin-left: -700px; overflow: visible; }
+.tc-far { fill: var(--celadon); stroke: var(--ink); stroke-width: 1; stroke-linejoin: round; }
+.tc-mid { fill: var(--sage); stroke: var(--ink); stroke-width: 1; stroke-linejoin: round; }
+.tc-pine { fill: var(--forest); }
+.tc-flag { fill: var(--quadred); stroke: var(--ink); stroke-width: 1; stroke-linejoin: round; }
+.tc-tent { fill: var(--ivory); stroke: var(--ink); stroke-width: 1; stroke-linejoin: round; }
+.tc-band { position: absolute; left: 0; right: 0; bottom: 0; height: 25px; background: var(--forest); border-top: 1px solid var(--ink); }
+.tc-eyebrow {
+  position: absolute; left: 0; right: 0; top: 9px; margin: 0;
+  font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink);
+}
+.tc-plaque {
+  position: absolute; left: 50%; bottom: 7px; transform: translateX(-50%);
+  width: max-content; max-width: calc(100% - 28px); padding: 6px 14px 5px;
+  background: var(--ivory); border: 1.5px solid var(--ink);
+  box-shadow: inset 0 0 0 3px var(--ivory), inset 0 0 0 4px var(--ink), 0 3px 0 rgba(36, 30, 18, 0.25);
+}
+.tc-plaque p { margin: 0; }
+.tc-title {
+  font-family: var(--display); font-weight: 600; font-size: clamp(13px, 3.9vw, 18px);
+  letter-spacing: 0.18em; text-transform: uppercase; line-height: 1.2; color: var(--ink);
+}
+.tc-counts { margin-top: 2px !important; font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; color: var(--ink-soft); white-space: nowrap; }
+.tc-counts i { font-style: normal; font-size: 7px; vertical-align: 1px; margin: 0 2px; color: var(--terracotta); }
+@media (prefers-reduced-motion: no-preference) {
+  .tc-sun { animation: sun-up 1.2s var(--ease-out) both; }
+  .tc-plaque { animation: plaque-in 0.5s var(--ease-out) 0.3s both; }
+}
+@keyframes sun-up { from { transform: translateY(30px); } }
+@keyframes plaque-in { from { transform: translate(-50%, 10px); opacity: 0; } }
+/* the date line only where the card has room for it above the summit */
+@media (max-width: 899px) and (max-height: 900px) { .tc-eyebrow { display: none; } }
+
+/* ---------- explore: the three chapters ---------- */
+.layers { border: 2px solid var(--ink); }
+.layer-tab { font-family: var(--display); font-weight: 600; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
+.layer-tab + .layer-tab { border-left: 1.5px solid var(--ink); }
+.layer-ch { font-family: var(--mono); font-size: 10px; font-weight: 600; margin-right: 6px; opacity: 0.7; }
+/* three chapters must always fit a phone: wrap rather than push the page sideways */
+.layer-tab { min-width: 0; white-space: normal; line-height: 1.1; padding: 4px; }
+@media (max-width: 430px) {
+  .layer-tab { font-size: 12px; letter-spacing: 0.04em; }
+  .layer-ch { display: none; }
+}
+.layer-tab.on { color: var(--ivory); }
+.layer-trail.on { background: var(--forest); }
+.layer-color.on { background: var(--burgundy); }
+.layer-sky.on { background: var(--night); }
+
+/* area groups read as intertitles: centered between two rules */
+.group-hd {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  padding: 12px 0 8px; background: none; color: var(--ink);
+  font-family: var(--display); font-size: 13px; font-weight: 600; letter-spacing: 0.22em;
+}
+.group-hd::before, .group-hd::after { content: ""; flex: 1 1 12px; height: 0; border-top: 3px double var(--ink); }
+.group-name { flex: 0 1 auto; }
+.group-drive { margin-left: 0; font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--terracotta); }
+.group-stamp { border-color: var(--burgundy); color: var(--burgundy); font-family: var(--mono); }
+
+/* the shelf: framed plates with a pine shadow */
+.shelf-head { text-align: center; }
+.shelf-head h3 { justify-content: center; font-family: var(--display); font-weight: 600; font-size: 17px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink); }
+.pick { box-shadow: 4px 4px 0 var(--forest); }
+.pick-plate { background: var(--sky); }
+.pick-name { color: var(--forest); }
+
+/* ---------- tab screens: centered title cards ---------- */
+.screen-eyebrow {
+  margin: 6px 0 0; text-align: center; font-family: var(--mono); font-size: 10.5px; font-weight: 600;
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--scene-deep);
+}
+.screen-title {
+  margin: 8px auto 10px; padding: 12px 10px 10px; text-align: center;
+  font-family: var(--display); font-weight: 600; font-size: clamp(21px, 6.4vw, 30px); font-stretch: normal;
+  letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.15;
+  color: var(--scene-ink); background: var(--scene);
+  border: 2px solid var(--ink); box-shadow: inset 0 0 0 4px var(--scene), inset 0 0 0 5.5px var(--ink);
+}
+.screen-lede { text-align: center; max-width: 34em; margin-left: auto; margin-right: auto; }
+
+/* identify: dusty blue and mustard */
+.capture {
+  background: var(--mustard); color: var(--ink); border-color: var(--ink);
+  font-family: var(--display); font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; font-size: 17px;
+  box-shadow: inset 0 0 0 6px var(--mustard), inset 0 0 0 7.5px var(--ink);
+}
+.capture:active { background: var(--marigold); }
+.context-line { border-left-color: var(--scene-deep); background: var(--scene-soft); }
+
+/* my atlas: sage and terracotta, like a pressed-plant sheet */
+.tally-row { border-top: 3px double var(--ink); }
+.tally-row > div { text-align: center; padding-right: 0; }
+.tally-row dd { color: var(--terracotta); }
+.atlas .progress span { background: var(--terracotta); }
+.card-found { border-color: var(--forest); box-shadow: 3px 3px 0 var(--sage); }
+.card-found .card-art { background: var(--celadon); }
+
+/* quests: mustard and burgundy, merit-badge sashes */
+.quest { border-left: 8px solid var(--mustard); }
+.quest-done { border-left-color: var(--burgundy); }
+.quest-off { border-left-color: var(--paper-3); }
+.quest-title { color: var(--forest); }
+.quest-bar span { background: var(--burgundy); }
+.q-item { border-color: var(--burgundy); color: var(--burgundy); }
+
+/* ---------- sheets: each one opens on its own color ---------- */
+.det-bar { background: var(--scene); color: var(--scene-ink); border-bottom: 3px double var(--ink); }
+.det-close, .det-act { color: inherit; }
+.det-act { border-color: currentColor; }
+.det-head { background: var(--scene-soft); }
+.det-eyebrow { font-family: var(--mono); letter-spacing: 0.2em; color: var(--scene-deep); }
+.sp-hero { background: var(--scene-soft); }
+.sp-hero-glyph { color: var(--forest); }
+
+/* section heads inside sheets: a centered mark over a double rule */
+.det-sec h3 { border-bottom: 3px double var(--ink); }
+
+/* ---------- tab bar: the index tab wears the scene's color ---------- */
+.tab { font-family: var(--mono); }
+.tab.on { color: var(--ink); }
+.tab-ink::before { inset: 0 22%; background: var(--scene-deep); }
+
+@media (min-width: 900px) {
+  .title-card { height: 176px; }
+  .tc-eyebrow { top: 14px; }
+  .tc-sun { bottom: 52px; width: 84px; height: 84px; margin-left: -42px; }
+  .tc-range { transform: scale(1.25); transform-origin: 50% 100%; }
+  .tc-plaque { bottom: 10px; padding: 8px 22px 7px; }
 }
