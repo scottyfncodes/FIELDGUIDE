@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { TRAILS } from "../../src/data/trails";
 import { AREAS } from "../../src/data/areas";
-import { START_PRESETS } from "../../src/data/geography";
 import { directionsUrl, driveMin, fmtDrive, haversineMi, ringMiles, sunTimes } from "../../src/lib/geo";
 import { inSeason } from "../../src/lib/season";
 import {
@@ -12,7 +11,7 @@ import { ringsFor } from "../../src/components/TopoPlate";
 import { fetchForecast, forecastUrl, isFresh, parseForecast, todayKey, verdict, wmo } from "../../src/lib/weather";
 import { loadKey, saveKey } from "../../src/lib/storage";
 
-const denver = START_PRESETS.find((p) => p.key === "denver")!;
+const denver = { key: "place", label: "Downtown Denver", lat: 39.7392, lon: -104.9903 };
 const byId = (id: string) => TRAILS.find((t) => t.id === id)!;
 const ctx = { areas: AREAS, log: {}, month: 9, verdictFor: () => null };
 
@@ -183,7 +182,7 @@ describe("living field guide helpers", () => {
   });
 
   it("season picks name the month, skip year-round trails, best views first", () => {
-    const picks = seasonPicks(TRAILS, 7, START_PRESETS[0]);
+    const picks = seasonPicks(TRAILS, 7, denver);
     expect(picks.length).toBeGreaterThan(0);
     expect(picks.length).toBeLessThanOrEqual(8);
     picks.forEach((t) => { expect(inSeason(t.prime, 7)).toBe(true); expect(t.prime).not.toMatch(/year-round/i); });

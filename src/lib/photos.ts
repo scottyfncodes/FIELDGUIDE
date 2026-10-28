@@ -109,3 +109,19 @@ export async function processImage(src: Blob | string): Promise<Processed> {
     if (typeof src !== "string") URL.revokeObjectURL(url);
   }
 }
+
+/** A copy to send for recognition: re-encoded through a canvas (so no EXIF or GPS
+    tags leave the phone), at most 1280 px, as bare base64. */
+export async function uploadCopy(blob: Blob): Promise<string> {
+  const url = URL.createObjectURL(blob);
+  try {
+    const img = await loadImage(url);
+    const out = await toBlob(draw(img, 1280), 0.8);
+    const buf = new Uint8Array(await out.arrayBuffer());
+    let bin = "";
+    for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+    return btoa(bin);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}

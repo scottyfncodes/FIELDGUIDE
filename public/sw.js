@@ -1,8 +1,9 @@
 /* CO Field Atlas service worker — keeps the app usable with no signal.
    - Pages: network first (so deploys show up), cached copy when offline.
    - Built assets (hashed filenames), icons, fonts: cache first.
-   - The forecast API is never cached here; the app keeps its own copy. */
-const CACHE = "atlas-v3"; // bump when cached shell files (e.g. icons) change
+   - The forecast API is never cached here; the app keeps its own copy.
+   - /api/ (the identify function) always goes to the network. */
+const CACHE = "atlas-v4"; // bump when cached shell files change (v4: drops any cached /api/ answer)
 const SHELL = ["/", "/manifest.json", "/icon-192.png", "/icon-180.png"];
 
 self.addEventListener("install", (e) => {
@@ -38,6 +39,7 @@ self.addEventListener("fetch", (e) => {
   const sameOrigin = url.origin === self.location.origin;
   const isFont = url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com";
   if (!sameOrigin && !isFont) return;
+  if (sameOrigin && url.pathname.startsWith("/api/")) return;
 
   e.respondWith(
     caches.match(req).then((hit) =>

@@ -17,7 +17,12 @@ Run `npm run check` (typecheck, unit tests, build, e2e) before pushing.
 - Never invent a fact or a number. Label what kind of claim it is with the `Tag` component
   (field guide, your record, suggestion, estimate, computed, iNaturalist). Unknown stays unknown.
 - Identification is a key over the user's answers, not image analysis. Never word results as certain.
-- Match iNaturalist records to guide species by taxon id, never by name.
+- Match iNaturalist records to guide species by taxon id, never by name. A model's
+  suggested name is resolved to a taxon by exact scientific name once, then only the id is used.
+- No preset starting towns: discovery starts from the person's location or a place they
+  typed. Distances are straight lines unless routed; say so. docs/DISCOVERY.md has the sources.
+- Photo recognition is a suggestion from the picture alone, capped by photo quality.
+  Location is context for ranking within a tier, never proof. Never send location to the model.
 - Don't change or remove the `co-trail-*` localStorage keys: existing users' logs live there.
 - Quest progress is derived from saved data only.
 - `src/lib/astro` and `src/lib/foliage` are verbatim ports; change them upstream too.

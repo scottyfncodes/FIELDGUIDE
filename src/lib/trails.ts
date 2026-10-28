@@ -95,7 +95,7 @@ export function filterTrails(
   });
 }
 
-export function sortTrails(trails: Trail[], key: SortKey, start: StartPoint): Trail[] {
+export function sortTrails(trails: Trail[], key: SortKey, start: StartPoint | null): Trail[] {
   const out = trails.slice();
   const byName = (a: Trail, b: Trail) => a.name.localeCompare(b.name);
   if (key === "views") out.sort((a, b) => b.views - a.views || bookHours(a) - bookHours(b) || byName(a, b));
@@ -126,7 +126,7 @@ export function standing(t: Trail, all: Trail[], key: "mi" | "gain"): { below: n
 
 /* Trails whose listed best months name the given month (year-round ones are
    left out: they're always "in season"), most scenic first, then nearest. */
-export function seasonPicks(trails: Trail[], month: number, start: StartPoint, n = 8): Trail[] {
+export function seasonPicks(trails: Trail[], month: number, start: StartPoint | null, n = 8): Trail[] {
   return trails
     .filter((t) => !/year-round/i.test(t.prime) && inSeason(t.prime, month))
     .sort((a, b) => b.views - a.views || (driveMin(start, a) ?? 0) - (driveMin(start, b) ?? 0) || a.name.localeCompare(b.name))

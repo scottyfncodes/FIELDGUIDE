@@ -4,19 +4,26 @@ import type { Group } from "../data/species";
 import { GROUP_CHOICES, QUESTIONS, STRENGTH_TEXT, rankMatches, shortlist } from "../lib/identify";
 import type { Answers, Match } from "../lib/identify";
 import { activeOuting, addObservation, newId, useAtlas } from "../lib/atlas";
-import { PLACES, KIND_LABEL, nearestPlaces, placeByRef } from "../lib/places";
+import { PLACES, KIND_LABEL, foundPlaces, nearestPlaces, placeByRef } from "../lib/places";
 import type { PlaceRef } from "../lib/places";
 import { photosPersist, processImage, putPhoto } from "../lib/photos";
 import { currentMonth } from "../lib/season";
 import { CameraMark, LeafGlyph } from "../components/Glyphs";
 import { SpeciesArt, Tag } from "../components/atlasBits";
 import { useActions } from "../components/PlaceSections";
+import { WILD_GROUPS } from "../lib/vision";
+import type { WildGroup } from "../lib/vision";
+import type { Origin } from "../lib/discover";
+import { WildID } from "./WildID";
 
 type Step = "start" | "key" | "results" | "save";
 interface Shot { blob: Blob; thumb: string }
 
-export function Identify({ at, onDone }: { at: PlaceRef | null; onDone: () => void }) {
+type Kind = "plant" | WildGroup;
+
+export function Identify({ at, near, onDone }: { at: PlaceRef | null; near: Origin | null; onDone: () => void }) {
   const act = useActions();
+  const [kind, setKind] = useState<Kind | null>(null);
   const atlas = useAtlas();
   const out = activeOuting(atlas);
   const month = currentMonth();
@@ -58,12 +65,44 @@ export function Identify({ at, onDone }: { at: PlaceRef | null; onDone: () => vo
     return next;
   });
 
+  if (kind === null) {
+    return (
+      <div className="screen identify">
+        <section className="id-start">
+          <p className="screen-eyebrow" aria-hidden="true">No. 2 · Nature ID</p>
+          <h2 className="screen-title">What did you find?</h2>
+          <p className="screen-lede">Pick what it is. Plants go through the field key; birds, insects and other animals start from your photo and the sightings recorded around you.</p>
+          {out && <p className="context-line">Saving to your outing at <b>{placeByRef(out.placeRef)?.name ?? "an unnamed place"}</b>.</p>}
+          {!out && at && <p className="context-line">At <b>{placeByRef(at)?.name}</b>.</p>}
+          <div className="kind-pick" role="group" aria-label="What kind of thing">
+            <button type="button" className="kind-btn kind-plant" onClick={() => setKind("plant")}>
+              <b>Plant</b><small>Trees, shrubs and wildflowers. Field key, {SPECIES.length} Colorado species</small>
+            </button>
+            {WILD_GROUPS.map((g) => (
+              <button key={g.key} type="button" className={"kind-btn kind-" + g.key} onClick={() => setKind(g.key)}>
+                <b>{g.label}</b><small>{g.hint}</small>
+              </button>
+            ))}
+          </div>
+          <p className="quiet small">Bird song identification isn't here yet. Photos stay on this phone unless you ask for a photo suggestion.</p>
+        </section>
+      </div>
+    );
+  }
+  if (kind !== "plant") {
+    return (
+      <div className="screen identify">
+        <WildID key={kind} group={kind} at={at} near={near} onBack={() => setKind(null)} onDone={(id) => { setKind(null); onDone(); act.openObs(id); }} />
+      </div>
+    );
+  }
+
   return (
     <div className="screen identify">
       {step === "start" && (
         <section className="id-start">
           <p className="screen-eyebrow" aria-hidden="true">No. 2 · A field key</p>
-          <h2 className="screen-title">What did you find?</h2>
+          <h2 className="screen-title">Which plant?</h2>
           <p className="screen-lede">Take a photo of the leaf, needles or flower, then answer a few quick questions. The field guide suggests what it might be.</p>
           {out && <p className="context-line">Saving to your outing at <b>{placeByRef(out.placeRef)?.name ?? "an unnamed place"}</b>.</p>}
           {!out && at && <p className="context-line">At <b>{placeByRef(at)?.name}</b>.</p>}
@@ -82,6 +121,7 @@ export function Identify({ at, onDone }: { at: PlaceRef | null; onDone: () => vo
           {err && <p className="notice" role="alert">{err}</p>}
           <p className="quiet small">If the camera doesn't open, Safari may not have permission: Settings, Safari, Camera. Photos stay on this phone.</p>
           <p className="quiet small">The guide covers {SPECIES.length} common Colorado trees, shrubs and wildflowers. <button type="button" className="linkish" onClick={act.openGuide}>Browse the field guide</button></p>
+          <button type="button" className="linkish" onClick={() => setKind(null)}>Not a plant? Choose again</button>
         </section>
       )}
 
@@ -274,7 +314,10 @@ function SaveFind({ speciesId, match, candidates, answers, shot, defaultPlace, o
     }
   };
 
-  const grouped = (["trail", "color", "sky"] as const).map((k) => ({ k, places: PLACES.filter((p) => p.kind === k) }));
+  const grouped = [
+    { k: "found" as const, label: "Your saved trails", places: foundPlaces() },
+    ...(["trail", "color", "sky"] as const).map((k) => ({ k, label: KIND_LABEL[k] + "s", places: PLACES.filter((p) => p.kind === k) })),
+  ].filter((g) => g.places.length);
   return (
     <section className="id-save" aria-label="Save your find">
       <div className="save-what">
@@ -293,7 +336,7 @@ function SaveFind({ speciesId, match, candidates, answers, shot, defaultPlace, o
           <option value="">No place</option>
           {!!near.length && <optgroup label="Near you">{near.map((r) => <option key={"n" + r} value={r}>{placeByRef(r)?.name}</option>)}</optgroup>}
           {grouped.map((g) => (
-            <optgroup key={g.k} label={KIND_LABEL[g.k] + "s"}>
+            <optgroup key={g.k} label={g.label}>
               {g.places.map((p) => <option key={p.ref} value={p.ref}>{p.name}</option>)}
             </optgroup>
           ))}

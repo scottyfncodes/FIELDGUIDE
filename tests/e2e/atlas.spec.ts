@@ -32,16 +32,17 @@ test("boots into the atlas with a forecast and no layout overflow", async ({ pag
   await expect(page.locator("g.mark-poor").first()).toBeVisible();
   const [sw, vw] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
   expect(sw).toBeLessThanOrEqual(vw);
-  // the map is visible without scrolling
+  // the location-first start is visible without scrolling, and the classics map is there below it
+  const locate = (await page.getByRole("button", { name: /use my location/i }).boundingBox())!;
+  expect(locate.y + locate.height).toBeLessThan(page.viewportSize()!.height * 0.75);
   const map = (await page.locator("svg.map").boundingBox())!;
-  expect(map.y).toBeLessThan(page.viewportSize()!.height / 3);
   expect(map.height).toBeGreaterThan(280);
 });
 
 test("touch targets are finger-sized", async ({ page }) => {
   test.skip(!isMobile(page), "phone layouts only");
   await page.goto("/");
-  const sel = [".zbtn", ".region-chip", ".fchip", ".row-check", ".row-main", ".search", ".wx-btn"];
+  const sel = [".lp-locate", ".zbtn", ".region-chip", ".fchip", ".row-check", ".row-main", ".search", ".wx-btn"];
   for (const s of sel) {
     const boxes = await page.locator(s).evaluateAll((els) => els.slice(0, 6).map((e) => e.getBoundingClientRect()).map((r) => [r.width, r.height]));
     expect(boxes.length, s).toBeGreaterThan(0);
@@ -53,9 +54,11 @@ test("touch targets are finger-sized", async ({ page }) => {
 
 test("tap a trail on the map → preview → details → back", async ({ page }) => {
   await page.goto("/");
+  await page.locator("svg.map").evaluate((e) => e.scrollIntoView({ block: "center" })); // the classics map sits below the location panel
   // a tap on a lone marker selects it; a tap on a cluster zooms in — keep tapping until a preview shows
   for (let i = 0; i < 5 && !(await page.locator(".preview").count()); i++) {
-    const pts = await markerPoints(page);
+    const vh = page.viewportSize()!.height;
+    const pts = (await markerPoints(page)).filter((m) => m.y > 80 && m.y < vh - 120); // clear of the app bar and tab bar
     const p = pts[pts.length - 1];
     if (isMobile(page)) await page.touchscreen.tap(p.x, p.y); else await page.mouse.click(p.x, p.y);
     await page.waitForTimeout(450);
@@ -75,6 +78,7 @@ test("tap a trail on the map → preview → details → back", async ({ page })
 
 test("map pans with a drag, zooms with the buttons and resets", async ({ page }) => {
   await page.goto("/");
+  await page.locator("svg.map").scrollIntoViewIfNeeded();
   const firstMark = async () => (await markerPoints(page))[0];
   const before = await firstMark();
   const box = (await page.locator("svg.map").boundingBox())!;
@@ -107,7 +111,7 @@ test("region chip flies the map in and narrows the list", async ({ page }) => {
 
 test("search + filters work with the on-screen controls", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("searchbox").fill("lake");
+  await page.getByRole("searchbox", { name: /search the atlas classics/i }).fill("lake");
   const n = await page.locator("li.row").count();
   expect(n).toBeGreaterThan(3);
   await page.getByRole("combobox", { name: "Difficulty" }).selectOption("Hard");

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { TRAILS } from "../../src/data/trails";
 import { AREAS } from "../../src/data/areas";
-import { REGIONS, START_PRESETS, STATE } from "../../src/data/geography";
+import * as GEO from "../../src/data/geography";
+const { REGIONS, STATE } = GEO;
 import { haversineMi } from "../../src/lib/geo";
 import { seasonParses } from "../../src/lib/season";
 import { diffBucket } from "../../src/lib/trails";
@@ -108,8 +109,7 @@ describe("areas, regions, start points", () => {
     }));
   });
 
-  it("start presets have unique keys and sit in Colorado", () => {
-    expect(new Set(START_PRESETS.map((p) => p.key)).size).toBe(START_PRESETS.length);
-    START_PRESETS.forEach((p) => expect(p.lat > STATE.south && p.lat < STATE.north, p.key).toBe(true));
+  it("there are no preset starting towns any more: discovery starts from the person's location or a search", () => {
+    expect("START_PRESETS" in GEO).toBe(false);
   });
 });

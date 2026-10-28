@@ -81,7 +81,8 @@ interface Props {
   selected: string | null;
   onSelect: (id: string | null) => void;
   onRegion: (key: string) => void;
-  start: StartPoint;
+  /** the search point, when there is one: a star and estimated drive rings */
+  start: StartPoint | null;
   /** marker shape for this layer: survey triangle (trails), leaf diamond (color), star dot (dark sky) */
   shape?: "tri" | "diamond" | "dot";
   /** extra class per marker, e.g. a foliage status */
@@ -481,7 +482,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(
   }
   /* drive-ring captions go wherever there's room left */
   const ringLabels: { hr: number; x: number; y: number }[] = [];
-  [1, 2, 4].forEach((hr) => {
+  if (start) [1, 2, 4].forEach((hr) => {
     const ry = (ringMiles(hr) / 69) * U * S;
     const x = sx(start.lon), y = sy(start.lat) - ry - 3;
     const lw = textW(`${hr} HR DRIVE`, 9);
@@ -534,7 +535,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(
           ))}
           <path d={DIVIDE_D} className="divide" vectorEffect="non-scaling-stroke" />
           {INTERSTATE_D.map((r) => <path key={r.n} d={r.d} className="road" vectorEffect="non-scaling-stroke" />)}
-          {[1, 2, 4].map((hr) => {
+          {start && [1, 2, 4].map((hr) => {
             const mi = ringMiles(hr);
             const ry = (mi / 69) * U;
             const rx = (mi / (69 * Math.cos((start.lat * Math.PI) / 180))) * COS * U;
@@ -602,7 +603,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(
         )}
 
         {/* start point */}
-        {onScreen(sx(start.lon), sy(start.lat)) && (
+        {start && onScreen(sx(start.lon), sy(start.lat)) && (
           <g transform={`translate(${sx(start.lon)} ${sy(start.lat)})`}>
             <path d="M0,-9 L2.6,-2.9 L9,-2.6 L4,1.6 L5.6,8 L0,4.4 L-5.6,8 L-4,1.6 L-9,-2.6 L-2.6,-2.9 Z" className="start-star" />
             {!overview && <text x="12" y="4" className="start-lbl">FROM {start.label.toUpperCase()}</text>}

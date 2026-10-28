@@ -4,7 +4,9 @@
    `window.storage` API, which doesn't exist on the deployed site.) */
 export const LOG_KEY = "co-trail-log-v1";
 export const WX_KEY = "co-trail-wx-v2";
+/** the last search point: { key: "gps" | "place", label, lat, lon } (older builds stored a preset town here) */
 export const START_KEY = "co-trail-start-v1";
+export const RADIUS_KEY = "co-field-radius-v1";
 
 export function loadKey<T>(key: string): T | null {
   try {

@@ -8,9 +8,12 @@ import { SITES } from "../data/darksky";
      trail:<id>   CO Trail Atlas trails (trailhead coordinates)
      color:<id>   Leaf Hunter fall-color spots
      sky:<id>     LOOKUP dark-sky sites
+     found:<id>   a trail from a live search the person kept (saved it, or
+                  logged a find there). Its snapshot lives in the atlas store
+                  and is registered here at load, so refs survive a reload.
    A PlaceRef is the stable identifier observations, outings and saves point
    at. The ids are the originals from each app, so nothing needs remapping. */
-export type PlaceKind = "trail" | "color" | "sky";
+export type PlaceKind = "trail" | "color" | "sky" | "found";
 export type PlaceRef = `${PlaceKind}:${string}`;
 
 export interface Place {
@@ -28,6 +31,7 @@ export const KIND_LABEL: Record<PlaceKind, string> = {
   trail: "Trail",
   color: "Fall color spot",
   sky: "Dark-sky site",
+  found: "Trail",
 };
 
 export const PLACES: Place[] = [
@@ -43,11 +47,19 @@ export const PLACES: Place[] = [
 ];
 
 const BY_REF = new Map(PLACES.map((p) => [p.ref, p]));
+const FOUND = new Map<PlaceRef, Place>();
+
+/** The atlas store calls this whenever its found-trail snapshots change. */
+export function registerFoundPlaces(list: { id: string; name: string; sub: string; lat: number; lon: number }[]) {
+  FOUND.clear();
+  list.forEach((f) => FOUND.set(`found:${f.id}`, { ref: `found:${f.id}`, kind: "found", id: f.id, name: f.name, sub: f.sub, lat: f.lat, lon: f.lon }));
+}
+export const foundPlaces = () => [...FOUND.values()];
 
 export const placeByRef = (ref: string | null | undefined): Place | undefined =>
-  ref ? BY_REF.get(ref as PlaceRef) : undefined;
+  ref ? BY_REF.get(ref as PlaceRef) ?? FOUND.get(ref as PlaceRef) : undefined;
 
-export const isPlaceRef = (s: unknown): s is PlaceRef => typeof s === "string" && BY_REF.has(s as PlaceRef);
+export const isPlaceRef = (s: unknown): s is PlaceRef => typeof s === "string" && (BY_REF.has(s as PlaceRef) || FOUND.has(s as PlaceRef));
 
 export function nearestPlaces(lat: number, lon: number, n = 5): { place: Place; mi: number }[] {
   const R = 3958.8, d = Math.PI / 180;
@@ -56,5 +68,5 @@ export function nearestPlaces(lat: number, lon: number, n = 5): { place: Place; 
       Math.cos(lat * d) * Math.cos(p.lat * d) * Math.sin(((p.lon - lon) * d) / 2) ** 2;
     return 2 * R * Math.asin(Math.sqrt(s));
   };
-  return PLACES.map((place) => ({ place, mi: dist(place) })).sort((a, b) => a.mi - b.mi).slice(0, n);
+  return [...PLACES, ...FOUND.values()].map((place) => ({ place, mi: dist(place) })).sort((a, b) => a.mi - b.mi).slice(0, n);
 }
