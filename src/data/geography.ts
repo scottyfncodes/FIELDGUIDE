@@ -1,4 +1,4 @@
-import type { Region, StartPoint } from "./types";
+import type { Region } from "./types";
 
 /* ---------- REGIONS ----------
    The atlas-level grouping: each region is a handful of AREAS. Region chips
@@ -17,19 +17,6 @@ export const REGIONS: Region[] = [
 
 export const regionOfArea = (areaKey: string): Region | undefined =>
   REGIONS.find((r) => r.areas.includes(areaKey));
-
-/* ---------- STARTING POINTS ---------- */
-export const START_PRESETS: StartPoint[] = [
-  { key: "sloans", label: "Sloan's Lake", lat: 39.7486, lon: -105.0452 },
-  { key: "denver", label: "Downtown Denver", lat: 39.7392, lon: -104.9903 },
-  { key: "golden", label: "Golden", lat: 39.7555, lon: -105.2211 },
-  { key: "boulder", label: "Boulder", lat: 40.0150, lon: -105.2705 },
-  { key: "springs", label: "Colorado Springs", lat: 38.8339, lon: -104.8214 },
-  { key: "breck", label: "Breckenridge", lat: 39.4817, lon: -106.0384 },
-  { key: "gwood", label: "Glenwood Springs", lat: 39.5505, lon: -107.3248 },
-  { key: "durango", label: "Durango", lat: 37.2753, lon: -107.8801 },
-  { key: "pagosa", label: "Pagosa Springs", lat: 37.2694, lon: -107.0098 },
-];
 
 /* ---------- MAP FEATURES ----------
    Reference geography for the sheet. Deliberately sparse: enough to orient

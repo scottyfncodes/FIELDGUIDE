@@ -2,9 +2,11 @@ import { useMemo, useRef, useState } from "react";
 import type { Log } from "../data/types";
 import { GROUP_LABEL, SPECIES } from "../data/species";
 import type { Group } from "../data/species";
-import { activeOuting, collection, endOuting, getAtlas, observationsOn, replaceAtlas, useAtlas } from "../lib/atlas";
+import { activeOuting, collection, endOuting, getAtlas, observationsOn, replaceAtlas, useAtlas, wildCollection } from "../lib/atlas";
 import type { AtlasData } from "../lib/atlas";
-import { KIND_LABEL, PLACES, placeByRef } from "../lib/places";
+import { KIND_LABEL, PLACES, foundPlaces, placeByRef } from "../lib/places";
+import { WildArt } from "../components/Wildlife";
+import { ICONIC_LABEL } from "../lib/wildlife";
 import { detectSource, importLeafHunter, importLookup } from "../lib/importers";
 import { processImage, putPhoto } from "../lib/photos";
 import { TRAILS } from "../data/trails";
@@ -34,11 +36,11 @@ export function Atlas({ log }: { log: Log }) {
     <div className="screen atlas">
       <header className="atlas-hd">
         <p className="screen-eyebrow" aria-hidden="true">No. 3 · The collection</p>
-        <h2 className="screen-title">My Atlas</h2>
+        <h2 className="screen-title">Field Journal</h2>
         <dl className="tally-row">
-          <div><dt>Species</dt><dd>{found.size}<small>/{SPECIES.length}</small></dd></div>
+          <div><dt>Plants</dt><dd>{found.size}<small>/{SPECIES.length}</small></dd></div>
+          <div><dt>Wildlife</dt><dd>{wildCollection(d).length}</dd></div>
           <div><dt>Finds</dt><dd>{d.observations.filter((o) => o.kind === "find").length}</dd></div>
-          <div><dt>Outings</dt><dd>{d.outings.length}</dd></div>
           <div><dt>Trails hiked</dt><dd>{hiked}<small>/{TRAILS.length}</small></dd></div>
         </dl>
         <div className="progress" role="progressbar" aria-label="Field guide species found" aria-valuemin={0} aria-valuemax={SPECIES.length} aria-valuenow={found.size}>
@@ -62,10 +64,10 @@ export function Atlas({ log }: { log: Log }) {
       {empty ? (
         <div className="journal-empty">
           <LeafGlyph shape="rounded" className="je-glyph" />
-          <h3>Your atlas starts on the trail</h3>
-          <p>Every leaf, flower and place you log lands here, tied to where and when you found it. It gets more interesting with every outing.</p>
+          <h3>Your journal starts on the trail</h3>
+          <p>Every bird, bug, leaf, flower and trail you log lands here, tied to where and when you found it. It gets more interesting with every outing.</p>
           <div className="id-actions">
-            <button type="button" className="pa-btn pa-primary" onClick={() => act.identifyAt(null)}>Identify a plant</button>
+            <button type="button" className="pa-btn pa-primary" onClick={() => act.identifyAt(null)}>Identify something</button>
             <button type="button" className="pa-btn" onClick={act.openGuide}>Browse the field guide</button>
           </div>
         </div>
@@ -121,13 +123,42 @@ function SpeciesView({ found, d }: { found: Set<string>; d: AtlasData }) {
           </section>
         );
       })}
-      {d.observations.some((o) => o.kind === "find" && !o.speciesId) && (
+      <WildView d={d} />
+      {d.observations.some((o) => o.kind === "find" && !o.speciesId && !o.taxon) && (
         <section className="card-group">
           <h3 className="group-hd"><span className="group-name">Waiting for a name</span></h3>
-          <ul className="obs-list">{d.observations.filter((o) => o.kind === "find" && !o.speciesId).map((o) => <ObsRow key={o.id} o={o} />)}</ul>
+          <ul className="obs-list">{d.observations.filter((o) => o.kind === "find" && !o.speciesId && !o.taxon).map((o) => <ObsRow key={o.id} o={o} />)}</ul>
         </section>
       )}
     </div>
+  );
+}
+
+/* Wildlife: one card per iNaturalist taxon, repeat sightings stacked, like the plants. */
+function WildView({ d }: { d: AtlasData }) {
+  const act = useActions();
+  const wild = wildCollection(d);
+  if (!wild.length) return null;
+  return (
+    <section className="card-group" aria-label="Wildlife">
+      <h3 className="group-hd"><span className="group-name">Wildlife</span><span className="group-drive">{wild.length} species</span></h3>
+      <ul className="cards">
+        {wild.map((e) => {
+          const thumb = e.obs.find((o) => o.thumb)?.thumb ?? null;
+          const name = e.taxon.common ?? e.taxon.name;
+          return (
+            <li key={e.taxon.id}>
+              <button type="button" className="card card-found" onClick={() => act.openTaxon(e.taxon.id)}
+                aria-label={`${name}, seen ${e.count} time${e.count === 1 ? "" : "s"}`}>
+                <WildArt photo={null} thumb={thumb} className="card-art" />
+                <span className="card-name">{name}</span>
+                <span className="card-meta">{ICONIC_LABEL[e.taxon.iconic ?? ""] ?? "Wildlife"} · {e.count}×</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
@@ -135,7 +166,7 @@ function PlacesView({ d, log }: { d: AtlasData; log: Log }) {
   const act = useActions();
   const refs = new Set<string>([...d.saved.map((s) => s.ref), ...d.observations.map((o) => o.placeRef ?? ""), ...d.outings.map((o) => o.placeRef ?? "")]);
   TRAILS.forEach((t) => { if (log[t.id]?.done) refs.add(`trail:${t.id}`); });
-  const places = PLACES.filter((p) => refs.has(p.ref));
+  const places = [...foundPlaces(), ...PLACES].filter((p) => refs.has(p.ref));
   if (!places.length) return <p className="quiet pad">Save a trail or log a find somewhere and it shows up here.</p>;
   return (
     <ul className="rows rows-flat">

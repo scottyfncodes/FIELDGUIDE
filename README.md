@@ -13,20 +13,29 @@ model, migration, and the cutover and rollback plan.
 
 ## What it does
 
-- **Explore.** 47 curated trails, 40 fall-color spots (Leaf Hunter's timing model) and 21
-  dark-sky sites (LOOKUP's records) on one map with layers. Trail filters, sort, regions,
-  drive rings and the batched Open-Meteo trailhead forecast work exactly as before. Every
+- **Explore, location first.** Start from "Use my location" or any address, town, ZIP, park
+  or trailhead (OSM Nominatim, Photon fallback). Trails within 5–50 miles come live from
+  COTREX (Colorado's statewide trail map), the Forest Service (every national forest) and
+  OpenStreetMap, merged into one card per trail, ranked by straight-line distance, paged,
+  and drawn on a field sheet around the search point. The 47 curated **atlas classics**,
+  40 fall-color spots and 21 dark-sky sites are still here. There are no preset starting
+  towns any more. See [docs/DISCOVERY.md](docs/DISCOVERY.md). Every
   place page has directions, save, start an outing, log a find, your finds there, and plant
   species recorded nearby on iNaturalist. Dark-sky pages compute tonight's darkness and Moon
   on the phone; fall-color pages take a leaf check.
-- **Identify.** Take a photo (or pick one), answer a few questions the photo can't, and the
-  field key suggests matches as strong, possible or weak, with field marks, look-alikes and
-  which answers disagreed. The photo is the record; it isn't analysed, and the screen says so.
+- **Nature ID.** Plants: take a photo, answer a few questions, and the field key suggests
+  matches as strong, possible or weak. The photo isn't analysed. Birds, insects and other
+  animals: compare your photo with species recorded nearby on iNaturalist, or search by
+  name. Where the site has photo recognition switched on (`ANTHROPIC_API_KEY`), a vision
+  model suggests candidates. They're hedged, capped by photo quality, and resolved to
+  iNaturalist taxa by id.
 - **Field Guide.** 46 common Colorado trees, shrubs and wildflowers, each tied to a verified
   iNaturalist taxon: how to know it, habitat, elevation, when to look, Colorado records by
   month, look-alikes, cautions, and your own sightings. Reached from search, results, the
   atlas and place pages.
-- **My Atlas.** One collection: species cards, places, outings and a journal by month.
+- **Field Journal** (the My Atlas tab). One collection: plant and wildlife cards, places
+  (including saved search trails), outings and a journal by month. Location on a
+  sighting is optional (none, about 1 km, or exact) and never kept for sensitive species.
   Repeat finds stack on one card. Backup export/import, and import from Leaf Hunter and LOOKUP.
 - **Quests.** Optional challenges computed from what you've saved, never from taps.
 
@@ -83,5 +92,7 @@ names. Run it after any data change.
 ## Deploy
 
 Vercel builds `main` with its Vite preset (`npm run build`, output `dist/`); pull requests
-get preview deployments. No environment variables are needed. iNaturalist and Open-Meteo
-are keyless; their usage limits are in docs/CONSOLIDATION.md.
+get preview deployments. `api/identify.ts` deploys as a Vercel Function. No environment
+variables are required. `ANTHROPIC_API_KEY` (server-side only) switches on photo
+recognition; see docs/DISCOVERY.md for cost and guard rails. iNaturalist, Open-Meteo,
+Nominatim, Photon, COTREX, the Forest Service layer and Overpass are all keyless.

@@ -8,13 +8,15 @@ import { useCallback, useEffect, useState } from "react";
      #atlas                          a tab
      #atlas&species=quaking-aspen    a tab with a sheet over it
      #identify&at=trail:greenmtn     a tab with a parameter
+     #found=cotrex:mesa:123          a trail from a live search (or a kept one)
+     #identify&taxon=144815          a wildlife species page (iNaturalist taxon id)
    One sheet at a time; opening another pushes history, so back returns to
    the previous sheet. */
 export type Tab = "explore" | "identify" | "atlas" | "quests";
 export const TABS: Tab[] = ["explore", "identify", "atlas", "quests"];
 
-export type SheetType = "trail" | "place" | "species" | "obs" | "guide" | "outing";
-const SHEETS: SheetType[] = ["trail", "place", "species", "obs", "guide", "outing"];
+export type SheetType = "trail" | "place" | "species" | "obs" | "guide" | "outing" | "found" | "taxon";
+const SHEETS: SheetType[] = ["trail", "place", "species", "obs", "guide", "outing", "found", "taxon"];
 
 export interface Route {
   tab: Tab;

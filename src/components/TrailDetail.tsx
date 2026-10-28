@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { Area, LogEntry, StartPoint, Trail, Weather } from "../data/types";
 import { STATE, regionOfArea } from "../data/geography";
-import { directionsUrl, driveMin, fmtDrive, sunTimes } from "../lib/geo";
+import { directionsUrl, driveMin, fmtDrive, haversineMi, sunTimes } from "../lib/geo";
+import { fmtMi } from "../lib/discover";
+import { NearbyWildlife } from "./Wildlife";
 import { MONTH_LBL, currentMonth, inSeason } from "../lib/season";
 import { bookHours, fmtHours, standing } from "../lib/trails";
 import { TRAILS } from "../data/trails";
@@ -52,7 +54,7 @@ function Standing({ t, k, unit, more }: { t: Trail; k: "mi" | "gain"; unit: stri
 interface Props {
   t: Trail;
   area: Area | undefined;
-  start: StartPoint;
+  start: StartPoint | null;
   w: Weather | null;
   p: LogEntry;
   onPatch: (patch: LogEntry) => void;
@@ -188,6 +190,7 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
 
       {place && <>
         <YourFinds place={place} />
+        <NearbyWildlife lat={t.lat} lon={t.lon} />
         <NearbyNature place={place} />
       </>}
 
@@ -214,7 +217,12 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
 
       {/* the primary action rides along at the bottom of the sheet, in thumb reach */}
       <div className="det-cta">
-        <div className="det-drive"><b>~{fmtDrive(drive)} drive</b> from {start.label} <span>· estimate, not routed</span></div>
+        <div className="det-drive">
+          {start ? <>
+            <b>{fmtMi(haversineMi(start.lat, start.lon, t.lat, t.lon))} away</b> in a straight line from {start.label}
+            <br /><span>~{fmtDrive(drive)} drive: estimate, not routed</span>
+          </> : <span>Directions open in your map app with the real driving route.</span>}
+        </div>
         <a className="dir-btn" href={directionsUrl(t.lat, t.lon)} target="_blank" rel="noreferrer">
           Directions to trailhead
         </a>

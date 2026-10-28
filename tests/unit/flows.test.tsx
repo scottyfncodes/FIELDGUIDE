@@ -14,6 +14,7 @@ beforeEach(() => reloadAtlas());
 const tab = (name: RegExp) => screen.getByRole("navigation", { name: "Sections" }).querySelector(`button:nth-child(${["explore", "identify", "atlas", "quests"].findIndex((t) => name.test(t)) + 1})`) as HTMLButtonElement;
 
 async function keyOutAspen(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole("button", { name: /^plant/i }));
   await user.click(screen.getByRole("button", { name: /no photo, just the questions/i }));
   await user.click(screen.getByRole("button", { name: /leaves on a tree or shrub/i }));
   for (const l of [/^one at a time/i, /^one blade/i, /^nearly round/i, /^toothed/i, /^tree, one main trunk/i, /^smooth white bark/i]) {
@@ -26,7 +27,7 @@ describe("navigation", () => {
   it("has the four destinations and no separate field-guide tab", () => {
     render(<App />);
     const nav = screen.getByRole("navigation", { name: "Sections" });
-    expect(within(nav).getAllByRole("button").map((b) => b.textContent)).toEqual(["Explore", "Identify", "My Atlas", "Quests"]);
+    expect(within(nav).getAllByRole("button").map((b) => b.textContent)).toEqual(["Explore", "Nature ID", "Journal", "Quests"]);
   });
 
   it("tabs are in the URL, so back and shared links work", async () => {
@@ -40,7 +41,7 @@ describe("navigation", () => {
   it("a guide entry opens from Explore search without leaving the map", async () => {
     const user = userEvent.setup();
     render(<App />);
-    await user.type(screen.getByRole("searchbox"), "aspen");
+    await user.type(screen.getByRole("searchbox", { name: /search the atlas classics/i }), "aspen");
     await user.click(within(screen.getByLabelText("In the field guide")).getByRole("button", { name: /quaking aspen/i }));
     const d = screen.getByRole("dialog");
     expect(within(d).getByRole("heading", { name: "Quaking aspen" })).toBeTruthy();
@@ -72,7 +73,7 @@ describe("identify, save, collect", () => {
 
     await user.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(screen.getByRole("heading", { name: "My Atlas" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Field Journal" })).toBeTruthy();
     expect(screen.getByRole("progressbar", { name: /species found/i }).getAttribute("aria-valuenow")).toBe("1");
     expect(screen.getByRole("button", { name: /quaking aspen, found 1 time/i })).toBeTruthy();
   });

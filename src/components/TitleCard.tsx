@@ -16,10 +16,12 @@ const mirror = (d: string) => {
 };
 const PINES = [30, 60, 160, 190, 300, 330, 440, 470, 520, 548, 576, 616, 640];
 
-export function TitleCard({ month, date, counts }: {
+export function TitleCard({ month, date, counts, place }: {
   month: number;
   date: Date;
-  counts: { trails: number; color: number; sky: number };
+  /** trails: how many the current search found; null before there is one */
+  counts: { trails: number | null; color: number; sky: number };
+  place: string | null;
 }) {
   return (
     <header className="title-card">
@@ -36,11 +38,11 @@ export function TitleCard({ month, date, counts }: {
         </svg>
         <span className="tc-band" />
       </div>
-      <p className="tc-eyebrow">Colorado · {date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</p>
+      <p className="tc-eyebrow">{place ?? "Colorado and beyond"} · {date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</p>
       <div className="tc-plaque">
         <p className="tc-title">The {MONTH_NAME[month - 1]} Expedition</p>
         <p className="tc-counts">
-          {counts.trails} trails <i aria-hidden="true">◆</i> {counts.color} color spots <i aria-hidden="true">◆</i> {counts.sky} dark skies
+          {counts.trails != null ? `${counts.trails} trails nearby` : "Trails anywhere"} <i aria-hidden="true">◆</i> {counts.color} color spots <i aria-hidden="true">◆</i> {counts.sky} dark skies
         </p>
       </div>
     </header>

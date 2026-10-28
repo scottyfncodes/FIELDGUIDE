@@ -17,11 +17,13 @@ const noOverflow = async (page: Page) => {
 test("trail → outing → photo → key → save → atlas → quest", async ({ page }) => {
   await page.goto("/#trail=greenmtn");
   const sheet = page.getByRole("dialog");
-  await expect(sheet.getByRole("region", { name: "Recorded nearby" }).getByText("common starlily")).toBeVisible();
+  await expect(sheet.getByRole("region", { name: "Recorded nearby", exact: true }).getByText("common starlily")).toBeVisible();
+  await expect(sheet.getByRole("region", { name: "Wildlife recorded nearby" }).getByText("Mountain Bluebird")).toBeVisible();
   await sheet.getByRole("button", { name: /start outing/i }).click();
   await sheet.getByRole("button", { name: "Log a find here" }).click();
 
   await expect(page.getByText(/saving to your outing at/i)).toContainText("Green Mountain Loop");
+  await page.getByRole("button", { name: /^plant/i }).click();
   await page.locator(".capture input").setInputFiles({ name: "leaf.png", mimeType: "image/png", buffer: PNG_1PX });
   await expect(page.locator("img.id-shot")).toBeVisible();
   await noOverflow(page);
@@ -34,14 +36,14 @@ test("trail → outing → photo → key → save → atlas → quest", async ({
   await expect(first).toContainText("Quaking aspen");
   await expect(first).toContainText(/strong match/i);
   await first.getByRole("button", { name: "It's this one" }).click();
-  await expect(page.getByLabel("Where")).toHaveValue("trail:greenmtn");
+  await expect(page.getByLabel("Where", { exact: true })).toHaveValue("trail:greenmtn");
   await page.getByRole("button", { name: "Save to my atlas" }).click();
 
   const obs = page.getByRole("dialog");
   await expect(obs.getByRole("heading", { name: "Quaking aspen" })).toBeVisible();
   await expect(obs.getByRole("img", { name: /your photo of quaking aspen/i })).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("heading", { name: "My Atlas" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Field Journal" })).toBeVisible();
   await expect(page.getByRole("button", { name: /quaking aspen, found 1 time/i })).toBeVisible();
   await noOverflow(page);
 
@@ -94,10 +96,16 @@ test("species pages credit their photo and show Colorado records", async ({ page
 test("tab bar and key controls are finger-sized on phones", async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 1000) >= 900, "phone layouts only");
   await page.goto("/#identify");
+  for (const s of [".kind-btn"]) {
+    const boxes = await page.locator(s).evaluateAll((els) => els.map((e) => e.getBoundingClientRect()).map((r) => [r.width, r.height]));
+    expect(boxes).toHaveLength(4);
+    for (const [w, h] of boxes) expect(Math.min(w, h), `${s} ${w}x${h}`).toBeGreaterThanOrEqual(44);
+  }
+  await page.getByRole("button", { name: /^plant/i }).click();
   await page.getByRole("button", { name: /no photo/i }).click();
   await page.getByRole("button", { name: /a wildflower/i }).click();
   for (const s of [".tab", ".q-choice", ".pa-btn"]) {
-    const boxes = await page.locator(s).evaluateAll((els) => els.slice(0, 8).map((e) => e.getBoundingClientRect()).map((r) => [r.width, r.height]));
+    const boxes = await page.locator(s).evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).slice(0, 8).map((e) => e.getBoundingClientRect()).map((r) => [r.width, r.height]));
     for (const [w, h] of boxes) expect(Math.min(w, h), `${s} ${w}x${h}`).toBeGreaterThanOrEqual(44);
   }
   // the tab bar sits clear of the bottom edge and covers nothing it shouldn't

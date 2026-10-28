@@ -12,6 +12,10 @@ import { placeByRef } from "../lib/places";
 /* App-level actions any screen or sheet can call (wired up in App.tsx). */
 export interface Actions {
   openSpecies: (id: string) => void;
+  /** a wildlife species page, by iNaturalist taxon id */
+  openTaxon: (id: number) => void;
+  /** a trail from the live search (or a kept one) */
+  openFound: (id: string) => void;
   openObs: (id: string) => void;
   openPlace: (ref: string) => void;
   openOuting: (id: string) => void;
@@ -63,7 +67,7 @@ export function ObsRow({ o, showPlace = true }: { o: Observation; showPlace?: bo
   const act = useActions();
   const s = speciesById(o.speciesId);
   const place = placeByRef(o.placeRef);
-  const title = o.kind === "leafcheck" ? `Leaf check · ${o.color?.percent ?? 0}% color` : s ? s.common : "Not identified yet";
+  const title = o.kind === "leafcheck" ? `Leaf check · ${o.color?.percent ?? 0}% color` : s ? s.common : o.taxon ? o.taxon.common ?? o.taxon.name : "Not identified yet";
   return (
     <li className="obs-row">
       <button type="button" className="obs-main" onClick={() => act.openObs(o.id)}>

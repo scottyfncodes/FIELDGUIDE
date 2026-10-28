@@ -17,6 +17,10 @@ import { leafReports } from "./PlaceDetail";
 import { ObsRow, useActions } from "./PlaceSections";
 import { SpeciesArt, Tag, fmtDate, fmtDuration, usePhotoUrl, useTaxon } from "./atlasBits";
 import { LeafGlyph } from "./Glyphs";
+import { searchWildTaxa, fetchWildTaxon } from "../lib/wildlife";
+import type { WildSpecies } from "../lib/wildlife";
+import type { Observation } from "../lib/atlas";
+import { WildArt } from "./Wildlife";
 
 const MONTHS = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 const MONTH_LONG = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -277,12 +281,18 @@ export function ObservationSheet({ id, onClose }: { id: string; onClose: () => v
     onClose();
   };
   return (
-    <SheetFrame label={s ? `Your find: ${s.common}` : "Your find"} onClose={onClose}>
-      {url ? <figure className="sp-hero"><img src={url} alt={s ? `Your photo of ${s.common}` : "Your photo"} /></figure> : null}
+    <SheetFrame label={s ? `Your find: ${s.common}` : o.taxon ? `Your sighting: ${o.taxon.common ?? o.taxon.name}` : "Your find"} onClose={onClose}>
+      {url ? <figure className="sp-hero"><img src={url} alt={s ? `Your photo of ${s.common}` : o.taxon ? `Your photo of ${o.taxon.common ?? o.taxon.name}` : "Your photo"} /></figure> : null}
       <header className="sp-head">
         <div className="det-eyebrow">{o.kind === "leafcheck" ? "LEAF CHECK" : "YOUR FIND"} · {fmtDate(o.observedAt, { weekday: "short", month: "short", day: "numeric", year: "numeric" }).toUpperCase()}</div>
-        <h2 className="det-name">{o.kind === "leafcheck" ? `${o.color?.percent ?? 0}% color` : s ? s.common : "Not identified yet"}</h2>
+        <h2 className="det-name">{o.kind === "leafcheck" ? `${o.color?.percent ?? 0}% color` : s ? s.common : o.taxon ? o.taxon.common ?? o.taxon.name : "Not identified yet"}</h2>
         {s && <div className="sp-sci"><i>{s.sci}</i></div>}
+        {o.taxon && <div className="sp-sci"><i>{o.taxon.name}</i></div>}
+        {o.taxon && (
+          <p className="quiet small">
+            <Tag p="yours" /> {o.idMethod === "photo" ? `Your ID, from a photo suggestion${o.photoLikelihood ? ` (${o.photoLikelihood})` : ""}` : o.idMethod === "compare" ? "Your ID, compared with sightings nearby" : "Your ID, found by name"}
+          </p>
+        )}
         {o.kind === "find" && s && (
           <p className="quiet small">
             <Tag p="yours" /> {o.idMethod === "key" ? `Your ID, with the field key's ${o.keyStrength ? STRENGTH_TEXT[o.keyStrength].toLowerCase() : "suggestion"}` : o.idMethod === "guide" ? "Your ID, picked from the field guide" : "Your ID"}
@@ -291,9 +301,11 @@ export function ObservationSheet({ id, onClose }: { id: string; onClose: () => v
         {o.kind === "leafcheck" && o.color && <p className="quiet small"><Tag p="yours" /> {STATUS_META[o.color.status].label}: {STATUS_META[o.color.status].description}</p>}
       </header>
 
-      {o.kind === "find" && !s && (
+      {o.kind === "find" && !s && !o.taxon && <WildNameIt o={o} />}
+
+      {o.kind === "find" && !s && !o.taxon && (
         <section className="det-sec">
-          <h3>Name it</h3>
+          <h3>{o.candidates.length ? "Name it" : "Or name it as a plant"}</h3>
           {o.candidates.length ? <>
             <p className="quiet small"><Tag p="suggestion" /> The key's suggestions when you saved it:</p>
             <ul className="similar">
@@ -327,7 +339,7 @@ export function ObservationSheet({ id, onClose }: { id: string; onClose: () => v
         <div className="kv">
           <div><span>Place</span><b>{place ? <button type="button" className="linkish" onClick={() => act.openPlace(place.ref)}>{place.name}</button> : "No place"}</b></div>
           <div><span>Outing</span><b>{outing ? <button type="button" className="linkish" onClick={() => act.openOuting(outing.id)}>{fmtDate(outing.startedAt)}</button> : "None"}</b></div>
-          {o.coords && <div><span>Location</span><b>{o.coords.lat.toFixed(5)}, {o.coords.lon.toFixed(5)} (±{o.coords.acc} m) <button type="button" className="linkish" onClick={() => updateObservation(o.id, { coords: null })}>Remove</button></b></div>}
+          {o.coords && <div><span>Location</span><b>{o.coords.approx ? `About ${o.coords.lat.toFixed(2)}, ${o.coords.lon.toFixed(2)} (rounded to ~1 km)` : `${o.coords.lat.toFixed(5)}, ${o.coords.lon.toFixed(5)} (±${o.coords.acc} m)`} <button type="button" className="linkish" onClick={() => updateObservation(o.id, { coords: null })}>Remove</button></b></div>}
           {o.source === "leaf-hunter" && <div><span>From</span><b>Imported from Leaf Hunter</b></div>}
         </div>
         <label className="notes-lbl" htmlFor="obs-note">Field note</label>
@@ -338,11 +350,53 @@ export function ObservationSheet({ id, onClose }: { id: string; onClose: () => v
       <div className="id-actions">
         {s && <button type="button" className="pa-btn" onClick={() => act.openSpecies(s.id)}>Field guide entry</button>}
         {s && o.kind === "find" && <button type="button" className="pa-btn" onClick={() => updateObservation(o.id, { speciesId: null, idMethod: "none" })}>Not sure any more</button>}
+        {o.taxon && <button type="button" className="pa-btn" onClick={() => act.openTaxon(o.taxon!.id)}>Species page</button>}
+        {o.taxon && <button type="button" className="pa-btn" onClick={() => updateObservation(o.id, { taxon: null, idMethod: "none", photoLikelihood: undefined })}>Not sure any more</button>}
         {confirm
           ? <button type="button" className="pa-btn pa-danger" onClick={del}>Tap again to delete</button>
           : <button type="button" className="pa-btn" onClick={() => setConfirm(true)}>Delete find</button>}
       </div>
     </SheetFrame>
+  );
+}
+
+/* Name an unidentified sighting as an animal: search iNaturalist, pick by taxon id. */
+function WildNameIt({ o }: { o: Observation }) {
+  const [q, setQ] = useState("");
+  const [hits, setHits] = useState<WildSpecies[] | null>(null);
+  const [busy, setBusy] = useState(false);
+  const search = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (q.trim().length < 2) return;
+    setBusy(true);
+    setHits(await searchWildTaxa(q, null));
+    setBusy(false);
+  };
+  const name = async (h: WildSpecies) => {
+    const full = await fetchWildTaxon(h.taxonId);
+    const sensitive = full ? full.sensitive : true;
+    updateObservation(o.id, {
+      taxon: { id: h.taxonId, name: h.name, common: h.common, iconic: h.iconic, sensitive }, idMethod: "search",
+      ...(sensitive ? { coords: null } : {}),
+    });
+  };
+  return (
+    <section className="det-sec">
+      <h3>Name it as an animal</h3>
+      <form className="lp-form" onSubmit={search} role="search">
+        <label htmlFor="obs-wild-q" className="sr-only">Search birds, insects and other animals</label>
+        <div className="search"><input id="obs-wild-q" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search birds, insects, mammals…" /></div>
+        <button type="submit" className="pa-btn" disabled={busy}>{busy ? "Looking…" : "Search"}</button>
+      </form>
+      {hits && (hits.length ? (
+        <ul className="picker-list">
+          {hits.map((h) => (
+            <li key={h.taxonId}><button type="button" onClick={() => name(h)}><WildArt photo={h.photo} className="gh-art" /><span><b>{h.common ?? h.name}</b><i>{h.name}</i></span></button></li>
+          ))}
+        </ul>
+      ) : <p className="quiet">Nothing by that name on iNaturalist.</p>)}
+      <p className="quiet small">Names come from iNaturalist. A sensitive species' location is removed when you name it.</p>
+    </section>
   );
 }
 

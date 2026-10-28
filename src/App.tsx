@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Log, LogEntry, StartPoint } from "./data/types";
 import { AREAS } from "./data/areas";
 import { TRAILS } from "./data/trails";
-import { START_PRESETS } from "./data/geography";
 import { speciesById } from "./data/species";
-import { LOG_KEY, START_KEY, WX_KEY, loadKey, saveKey } from "./lib/storage";
+import { LOG_KEY, RADIUS_KEY, START_KEY, WX_KEY, loadKey, saveKey } from "./lib/storage";
+import { RADIUS_PRESETS } from "./lib/discover";
+import type { Origin } from "./lib/discover";
 import { fetchForecast, isFresh } from "./lib/weather";
 import type { WxPayload } from "./lib/weather";
 import { activeOuting, observationsOn, useAtlas } from "./lib/atlas";
@@ -12,7 +13,7 @@ import { placeByRef } from "./lib/places";
 import type { PlaceRef } from "./lib/places";
 import { useRoute } from "./lib/router";
 import type { Tab } from "./lib/router";
-import { Explore } from "./screens/Explore";
+import { Explore, startOf } from "./screens/Explore";
 import type { ExploreHandle } from "./screens/Explore";
 import { Identify } from "./screens/Identify";
 import { Atlas } from "./screens/Atlas";
@@ -20,6 +21,8 @@ import { Quests } from "./screens/Quests";
 import { TrailDetail } from "./components/TrailDetail";
 import { PlaceDetail } from "./components/PlaceDetail";
 import { GuideIndex, ObservationSheet, OutingSheet, SpeciesPage } from "./components/Sheets";
+import { FoundTrailDetail } from "./components/FoundTrailDetail";
+import { TaxonPage } from "./components/Wildlife";
 import { ActionsCtx } from "./components/PlaceSections";
 import type { Actions } from "./components/PlaceSections";
 import { Toast, fmtDuration } from "./components/atlasBits";
@@ -27,26 +30,33 @@ import { TabIcon } from "./components/Glyphs";
 
 const TRAIL_BY_ID = new Map(TRAILS.map((t) => [t.id, t]));
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
-const TAB_LABEL: Record<Tab, string> = { explore: "Explore", identify: "Identify", atlas: "My Atlas", quests: "Quests" };
+const TAB_LABEL: Record<Tab, string> = { explore: "Explore", identify: "Nature ID", atlas: "Journal", quests: "Quests" };
 
-const loadStart = (): StartPoint => {
+/* The last place the person searched from, kept in the original start-point
+   key and shape. Nothing is assumed when there isn't one: Explore asks. */
+const loadOrigin = (): Origin | null => {
   const s = loadKey<StartPoint>(START_KEY);
-  return s && typeof s.lat === "number" && typeof s.lon === "number" && s.label ? s : START_PRESETS[0];
+  if (!s || typeof s.lat !== "number" || typeof s.lon !== "number" || !s.label) return null;
+  return s.key === "gps" ? { kind: "gps", lat: s.lat, lon: s.lon, label: /^near /i.test(s.label) ? s.label : "Your last location" } : { kind: "place", lat: s.lat, lon: s.lon, label: s.label };
+};
+const loadRadius = (): number => {
+  const r = loadKey<number>(RADIUS_KEY);
+  return RADIUS_PRESETS.includes(r as (typeof RADIUS_PRESETS)[number]) ? (r as number) : 10;
 };
 
 export default function App() {
   const [route, nav] = useRoute();
   const atlas = useAtlas();
   const [log, setLog] = useState<Log>(() => loadKey<Log>(LOG_KEY) || {});
-  const [start, setStart] = useState<StartPoint>(loadStart);
+  const [origin, setOrigin] = useState<Origin | null>(loadOrigin);
+  const [radius, setRadius] = useState<number>(loadRadius);
+  const start = startOf(origin);
   const [wx, setWx] = useState<WxPayload | null>(() => {
     const c = loadKey<WxPayload>(WX_KEY);
     return isFresh(c) ? c : null;
   });
   const [wxBusy, setWxBusy] = useState(false);
   const [wxErr, setWxErr] = useState<string | null>(null);
-  const [locBusy, setLocBusy] = useState(false);
-  const [locErr, setLocErr] = useState<string | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [hikePrompt, setHikePrompt] = useState<string | null>(null); // trail id
   const exploreRef = useRef<ExploreHandle>(null);
@@ -59,16 +69,11 @@ export default function App() {
     setLog((prev) => ({ ...prev, [id]: { ...(prev[id] || {}), ...patch } }));
   }, []);
 
-  const chooseStart = (s: StartPoint) => { setStart(s); setLocErr(null); saveKey(START_KEY, s); };
-  const locateMe = () => {
-    if (!navigator.geolocation) { setLocErr("Location isn't available here. Pick a town instead."); return; }
-    setLocBusy(true); setLocErr(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { setLocBusy(false); chooseStart({ key: "gps", label: "My location", lat: pos.coords.latitude, lon: pos.coords.longitude }); },
-      () => { setLocBusy(false); setLocErr("Couldn't read your location. Pick a town instead."); },
-      { timeout: 10000, maximumAge: 10 * 60 * 1000 },
-    );
-  };
+  const chooseOrigin = useCallback((o: Origin) => {
+    setOrigin(o);
+    saveKey(START_KEY, { key: o.kind, label: o.label, lat: o.lat, lon: o.lon });
+  }, []);
+  const chooseRadius = useCallback((r: number) => { setRadius(r); saveKey(RADIUS_KEY, r); }, []);
 
   /* ---- forecast: fetched automatically once a day-ish, refreshable ---- */
   const refreshWeather = useCallback(async () => {
@@ -98,6 +103,8 @@ export default function App() {
 
   const actions: Actions = useMemo(() => ({
     openSpecies: (id) => openSheet("species", id),
+    openTaxon: (id) => openSheet("taxon", String(id)),
+    openFound: (id) => openSheet("found", id),
     openObs: (id) => openSheet("obs", id),
     openOuting: (id) => openSheet("outing", id),
     openGuide: () => openSheet("guide", "all"),
@@ -105,6 +112,7 @@ export default function App() {
       const p = placeByRef(ref);
       if (!p) return;
       if (p.kind === "trail") openSheet("trail", p.id);
+      else if (p.kind === "found") openSheet("found", p.id);
       else openSheet("place", p.ref);
     },
     identifyAt: (ref: PlaceRef | null) => nav.go({ tab: "identify", sheet: null, params: ref ? { at: ref } : {} }),
@@ -127,7 +135,10 @@ export default function App() {
   const trail = sheet?.type === "trail" ? TRAIL_BY_ID.get(sheet.id) : undefined;
   const place = sheet?.type === "place" ? placeByRef(sheet.id) : undefined;
   const species = sheet?.type === "species" ? speciesById(sheet.id) : undefined;
-  const sheetOpen = !!(trail || (place && place.kind !== "trail") || species || sheet?.type === "obs" || sheet?.type === "guide" || sheet?.type === "outing");
+  const taxonId = sheet?.type === "taxon" && /^\d+$/.test(sheet.id) ? Number(sheet.id) : null;
+  const foundId = sheet?.type === "found" ? sheet.id : null;
+  const sheetOpen = !!(trail || (place && place.kind !== "trail" && place.kind !== "found") || species || taxonId || foundId ||
+    sheet?.type === "obs" || sheet?.type === "guide" || sheet?.type === "outing");
 
   useEffect(() => {
     if (!sheetOpen) return;
@@ -154,7 +165,7 @@ export default function App() {
   const outPlace = placeByRef(out?.placeRef);
   const prompted = hikePrompt ? TRAIL_BY_ID.get(hikePrompt) : undefined;
   /* each sheet is its own scene: a trail in forest and parchment, a plant in sage and terracotta */
-  const sheetScene = trail ? "explore" : place ? place.kind : species || sheet?.type === "guide" ? "botany" : "atlas";
+  const sheetScene = trail || foundId ? "explore" : place ? place.kind : species || sheet?.type === "guide" ? "botany" : taxonId ? "identify" : "atlas";
 
   return (
     <ActionsCtx.Provider value={actions}>
@@ -189,11 +200,11 @@ export default function App() {
 
         <main className="tab-body" {...behindSheet}>
           <div hidden={route.tab !== "explore"}>
-            <Explore ref={exploreRef} log={log} patchLog={patchLog} start={start} chooseStart={chooseStart}
-              locateMe={locateMe} locBusy={locBusy} locErr={locErr} wx={wx} wxErr={wxErr} onRetryWx={refreshWeather}
+            <Explore ref={exploreRef} log={log} patchLog={patchLog} origin={origin} onOrigin={chooseOrigin}
+              radiusMi={radius} onRadius={chooseRadius} wx={wx} wxErr={wxErr} onRetryWx={refreshWeather}
               openTrailId={trail?.id ?? null} />
           </div>
-          {route.tab === "identify" && <Identify at={(placeByRef(route.params.at)?.ref) ?? null} onDone={() => { nav.go({ tab: "atlas", sheet: null, params: {} }, { replace: true }); window.scrollTo({ top: 0 }); }} />}
+          {route.tab === "identify" && <Identify at={(placeByRef(route.params.at)?.ref) ?? null} near={origin} onDone={() => { nav.go({ tab: "atlas", sheet: null, params: {} }, { replace: true }); window.scrollTo({ top: 0 }); }} />}
           {route.tab === "atlas" && <Atlas log={log} />}
           {route.tab === "quests" && <Quests />}
         </main>
@@ -232,7 +243,9 @@ export default function App() {
                   w={wx?.byTrail?.[trail.id] ?? null} p={log[trail.id] || {}}
                   onPatch={(patch) => patchLog(trail.id, patch)} onClose={closeSheet} onShowOnMap={() => showOnMap(trail.id)} />
               )}
-              {place && place.kind !== "trail" && <PlaceDetail key={place.ref} place={place} start={start} onClose={closeSheet} />}
+              {place && place.kind !== "trail" && place.kind !== "found" && <PlaceDetail key={place.ref} place={place} start={start} onClose={closeSheet} />}
+              {foundId && <FoundTrailDetail key={foundId} id={foundId} origin={origin} onClose={closeSheet} />}
+              {taxonId && <TaxonPage key={taxonId} id={taxonId} near={origin} onClose={closeSheet} />}
               {species && <SpeciesPage key={species.id} s={species} onClose={closeSheet} />}
               {sheet?.type === "guide" && <GuideIndex onClose={closeSheet} />}
               {sheet?.type === "obs" && <ObservationSheet key={sheet.id} id={sheet.id} onClose={closeSheet} />}

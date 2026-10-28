@@ -10,7 +10,8 @@ import { measureMid, measureText } from "../lib/astro/types";
 import { addObservation, newId, useAtlas } from "../lib/atlas";
 import type { AtlasData } from "../lib/atlas";
 import { putPhoto, processImage } from "../lib/photos";
-import { directionsUrl, driveMin, fmtDrive } from "../lib/geo";
+import { directionsUrl, driveMin, fmtDrive, haversineMi } from "../lib/geo";
+import { fmtMi } from "../lib/discover";
 import type { StartPoint } from "../data/types";
 import { fmtClock, tonightAt } from "../lib/tonight";
 import { Locator } from "./TrailDetail";
@@ -32,7 +33,7 @@ export function leafReports(d: AtlasData): FoliageReport[] {
     }));
 }
 
-interface Props { place: Place; start: StartPoint; onClose: () => void }
+interface Props { place: Place; start: StartPoint | null; onClose: () => void }
 
 export function PlaceDetail({ place, start, onClose }: Props) {
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -42,7 +43,9 @@ export function PlaceDetail({ place, start, onClose }: Props) {
     <>
       <div className="det-cta">
         <a className="dir-btn" href={directionsUrl(place.lat, place.lon)} target="_blank" rel="noreferrer">Directions</a>
-        <div className="det-drive">~{fmtDrive(drive)} drive from {start.label}<br /><span>estimate, not routed</span></div>
+        <div className="det-drive">{start
+          ? <>{fmtMi(haversineMi(start.lat, start.lon, place.lat, place.lon))} away in a straight line from {start.label}<br /><span>~{fmtDrive(drive)} drive: estimate, not routed</span></>
+          : <span>Directions open in your map app with the real driving route.</span>}</div>
       </div>
       <PlaceActions place={place} />
     </>

@@ -30,11 +30,11 @@ type Entry = { t: number; v: unknown };
 type Cache = Record<string, Entry>;
 
 const readCache = (): Cache => loadKey<Cache>(CACHE_KEY) ?? {};
-function cached<T>(key: string, maxAge: number): T | undefined {
+export function cached<T>(key: string, maxAge: number): T | undefined {
   const e = readCache()[key];
   return e && Date.now() - e.t < maxAge ? (e.v as T) : undefined;
 }
-function store(key: string, v: unknown) {
+export function store(key: string, v: unknown) {
   const c = readCache();
   c[key] = { t: Date.now(), v };
   const keys = Object.keys(c);
@@ -42,7 +42,7 @@ function store(key: string, v: unknown) {
   saveKey(CACHE_KEY, c);
 }
 
-async function getJson(path: string, fetchImpl: typeof fetch = fetch): Promise<any> {
+export async function getJson(path: string, fetchImpl: typeof fetch = fetch): Promise<any> {
   const ctl = typeof AbortController !== "undefined" ? new AbortController() : null;
   const timer = setTimeout(() => ctl?.abort(), 9000);
   try {
