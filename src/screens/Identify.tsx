@@ -62,6 +62,7 @@ export function Identify({ at, onDone }: { at: PlaceRef | null; onDone: () => vo
     <div className="screen identify">
       {step === "start" && (
         <section className="id-start">
+          <p className="screen-eyebrow" aria-hidden="true">No. 2 · A field key</p>
           <h2 className="screen-title">What did you find?</h2>
           <p className="screen-lede">Take a photo of the leaf, needles or flower, then answer a few quick questions. The field guide suggests what it might be.</p>
           {out && <p className="context-line">Saving to your outing at <b>{placeByRef(out.placeRef)?.name ?? "an unnamed place"}</b>.</p>}

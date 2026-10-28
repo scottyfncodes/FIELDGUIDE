@@ -153,10 +153,12 @@ export default function App() {
   const out = activeOuting(atlas);
   const outPlace = placeByRef(out?.placeRef);
   const prompted = hikePrompt ? TRAIL_BY_ID.get(hikePrompt) : undefined;
+  /* each sheet is its own scene: a trail in forest and parchment, a plant in sage and terracotta */
+  const sheetScene = trail ? "explore" : place ? place.kind : species || sheet?.type === "guide" ? "botany" : "atlas";
 
   return (
     <ActionsCtx.Provider value={actions}>
-      <div className="app">
+      <div className="app" data-scene={route.tab}>
         <header className="appbar" {...behindSheet}>
           <div className="brand">
             <span className="brand-mark" aria-hidden="true">▲</span>
@@ -223,7 +225,7 @@ export default function App() {
 
         {sheetOpen && (
           <div className="sheet-scrim" onClick={closeSheet}>
-            <div className="sheet" role="dialog" aria-modal="true" aria-labelledby={trail || place ? "det-name" : undefined}
+            <div className="sheet" data-scene={sheetScene} role="dialog" aria-modal="true" aria-labelledby={trail || place ? "det-name" : undefined}
               aria-label={trail || place ? undefined : "Details"} onClick={(e) => e.stopPropagation()}>
               {trail && (
                 <TrailDetail key={trail.id} t={trail} area={AREAS[trail.area]} start={start}

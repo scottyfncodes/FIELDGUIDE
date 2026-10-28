@@ -26,6 +26,7 @@ import { leafReports } from "../components/PlaceDetail";
 import { useActions } from "../components/PlaceSections";
 import { SpeciesArt, Tag } from "../components/atlasBits";
 import { RING_FT, TopoPlate } from "../components/TopoPlate";
+import { TitleCard } from "../components/TitleCard";
 
 const MONTH_NAME = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const TRAIL_BY_ID = new Map(TRAILS.map((t) => [t.id, t]));
@@ -37,10 +38,10 @@ const matches = (q: string, ...hay: (string | undefined)[]) => {
 };
 
 type Layer = PlaceKind;
-const LAYERS: { key: Layer; label: string; n: number }[] = [
-  { key: "trail", label: "Trails", n: TRAILS.length },
-  { key: "color", label: "Fall color", n: COLORADO_LOCATIONS.length },
-  { key: "sky", label: "Dark skies", n: SITES.length },
+const LAYERS: { key: Layer; label: string; n: number; ch: string }[] = [
+  { key: "trail", label: "Trails", n: TRAILS.length, ch: "I" },
+  { key: "color", label: "Fall color", n: COLORADO_LOCATIONS.length, ch: "II" },
+  { key: "sky", label: "Dark skies", n: SITES.length, ch: "III" },
 ];
 
 export interface ExploreHandle { showOnMap: (p: { id: string; lat: number; lon: number; name: string }, layer: Layer) => void }
@@ -201,14 +202,10 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
   };
 
   return (
+    <>
+    <TitleCard month={month} date={now} counts={{ trails: TRAILS.length, color: COLORADO_LOCATIONS.length, sky: SITES.length }} />
     <div className="layout">
       <section className="map-col" ref={mapSecRef} aria-label="Map">
-        {/* quad-sheet collar: what this sheet covers, and today's date */}
-        <div className="collar">
-          <span>Sheet · Colorado</span>
-          <span className="collar-mid">{TRAILS.length} trails · {COLORADO_LOCATIONS.length} color · {SITES.length} dark sky</span>
-          <span>{now.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</span>
-        </div>
         <AtlasMap ref={mapRef} key={layer} trails={mapPoints} allTrails={allPoints} log={layer === "trail" ? log : {}}
           verdictFor={layer === "trail" ? verdictFor : () => null} selected={sel}
           onSelect={(id) => setSel(id)} onRegion={pickRegion} start={start}
@@ -276,8 +273,8 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
           <div className="layers" role="tablist" aria-label="What to show">
             {LAYERS.map((l) => (
               <button key={l.key} type="button" role="tab" aria-selected={layer === l.key}
-                className={"layer-tab" + (layer === l.key ? " on" : "")} onClick={() => switchLayer(l.key)}>
-                {l.label} <span className="region-n">{l.n}</span>
+                className={"layer-tab layer-" + l.key + (layer === l.key ? " on" : "")} onClick={() => switchLayer(l.key)}>
+                <span className="layer-ch" aria-hidden="true">{l.ch}</span>{l.label} <span className="region-n">{l.n}</span>
               </button>
             ))}
           </div>
@@ -430,5 +427,6 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
         </footer>
       </section>
     </div>
+    </>
   );
 });
