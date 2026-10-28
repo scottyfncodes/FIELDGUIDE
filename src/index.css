@@ -53,6 +53,8 @@ button, a, label, select { touch-action: manipulation; -webkit-tap-highlight-col
 button { cursor: pointer; }
 button:disabled { cursor: default; }
 :focus-visible { outline: 2.5px solid var(--quadred); outline-offset: 2px; }
+/* after a tap, programmatic focus (a sheet's Back button) shouldn't wear the keyboard ring */
+html[data-input="touch"] button:focus-visible { outline: none; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- app bar ---------- */
