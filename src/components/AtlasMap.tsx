@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import type { Log, StartPoint, Trail, Verdict } from "../data/types";
+import type { Log, StartPoint, Verdict } from "../data/types";
 import { CITIES, DIVIDE, INTERSTATES, NEIGHBORS, RANGE_LABELS, REGIONS, STATE } from "../data/geography";
 import { ringMiles } from "../lib/geo";
 
@@ -61,6 +61,11 @@ type Rect = { x: number; y: number; w: number; h: number };
 const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 const textW = (s: string, px: number) => s.length * px * 0.6 + 6;
 
+/* Anything with a position can go on the sheet. Trails carry an area (for the
+   region badges) and a view rating (label priority); other layers don't. */
+export interface MapPoint { id: string; name: string; lat: number; lon: number; area?: string; views?: number }
+type Trail = MapPoint;
+
 export interface AtlasMapHandle {
   flyToTrails: (ts: Trail[]) => void;
   flyToTrail: (t: Trail) => void;
@@ -77,11 +82,17 @@ interface Props {
   onSelect: (id: string | null) => void;
   onRegion: (key: string) => void;
   start: StartPoint;
+  /** marker shape for this layer: survey triangle (trails), leaf diamond (color), star dot (dark sky) */
+  shape?: "tri" | "diamond" | "dot";
+  /** extra class per marker, e.g. a foliage status */
+  markClass?: (t: MapPoint) => string;
+  /** what the markers are, for the map's accessible name */
+  noun?: string;
   children?: ReactNode;
 }
 
 export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(
-  { trails, allTrails, log, verdictFor, selected, onSelect, onRegion, start, children }, ref,
+  { trails, allTrails, log, verdictFor, selected, onSelect, onRegion, start, shape = "tri", markClass, noun = "trails", children }, ref,
 ) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -430,7 +441,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(
   if (overview) {
     /* biggest regions claim space first */
     REGIONS
-      .map((rg) => ({ rg, inR: pts.filter((m) => rg.areas.includes(m.t.area)) }))
+      .map((rg) => ({ rg, inR: pts.filter((m) => !!m.t.area && rg.areas.includes(m.t.area)) }))
       .filter((r) => r.inR.length)
       .sort((a, b) => b.inR.length - a.inR.length)
       .forEach(({ rg, inR }) => {
@@ -456,7 +467,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(
     });
   } else {
     const order = pts.slice().sort((a, b) =>
-      (b.t.id === selected ? 1 : 0) - (a.t.id === selected ? 1 : 0) || b.t.views - a.t.views);
+      (b.t.id === selected ? 1 : 0) - (a.t.id === selected ? 1 : 0) || (b.t.views ?? 0) - (a.t.views ?? 0));
     order.forEach((m) => {
       if (m.x < -20 || m.x > w + 20 || m.y < -20 || m.y > h + 20) return;
       const lw = textW(m.t.name, 11.5), lh = 15;
@@ -493,7 +504,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(
         data-zoom={view.k.toFixed(3)}
         role="application"
         aria-roledescription="map"
-        aria-label={`Map of Colorado with ${trails.length} trails. Arrow keys pan, plus and minus zoom. The trail list below has the same trails.`}
+        aria-label={`Map of Colorado with ${trails.length} ${noun}. Arrow keys pan, plus and minus zoom. The list below has the same ${noun}.`}
         tabIndex={0}
         onKeyDown={onKeyDown}
         onPointerDown={onPointerDown}
@@ -574,11 +585,14 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(
           if (!onScreen(x, y)) return null;
           const v = verdictFor(t);
           const done = !!log[t.id]?.done;
-          const cls = "mark" + (v ? " mark-" + v.toLowerCase() : "") + (done ? " mark-done" : "") + (selected === t.id ? " mark-sel" : "");
+          const cls = "mark" + (v ? " mark-" + v.toLowerCase() : "") + (done ? " mark-done" : "") + (selected === t.id ? " mark-sel" : "") +
+            (shape !== "tri" ? ` mark-${shape}` : "") + (markClass ? " " + markClass(t) : "");
           const s = selected === t.id ? mSize * 1.35 : mSize;
           return (
             <g key={t.id} className={cls} transform={`translate(${x.toFixed(1)} ${y.toFixed(1)})`}>
-              <path d={`M0,${-s * 1.05} L${s * 0.95},${s * 0.75} L${-s * 0.95},${s * 0.75} Z`} className="mark-tri" />
+              {shape === "tri" && <path d={`M0,${-s * 1.05} L${s * 0.95},${s * 0.75} L${-s * 0.95},${s * 0.75} Z`} className="mark-tri" />}
+              {shape === "diamond" && <path d={`M0,${-s * 1.1} C${s * 0.8},${-s * 0.5} ${s * 0.8},${s * 0.4} 0,${s * 1.1} C${-s * 0.8},${s * 0.4} ${-s * 0.8},${-s * 0.5} 0,${-s * 1.1} Z`} className="mark-tri" />}
+              {shape === "dot" && <circle r={s * 0.85} className="mark-tri" />}
               {done && <path d={`M${-s * 0.35},${s * 0.12} L${-s * 0.08},${s * 0.4} L${s * 0.4},${-s * 0.2}`} className="mark-check" />}
             </g>
           );

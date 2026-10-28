@@ -15,7 +15,7 @@ const openTrail = async (user: ReturnType<typeof userEvent.setup>, name: RegExp)
 describe("app boot", () => {
   it("renders the atlas with every trail, the map and the discovery controls", async () => {
     render(<App />);
-    expect(screen.getByRole("heading", { level: 1, name: /co trail atlas/i })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 1, name: /co field atlas/i })).toBeTruthy();
     expect(rows().length).toBe(TRAILS.length);
     expect(screen.getByRole("application", { name: /map of colorado/i })).toBeTruthy();
     expect(document.querySelectorAll("g.mark").length).toBe(TRAILS.length);
@@ -207,7 +207,7 @@ describe("forecast", () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new TypeError("Failed to fetch"))));
     const user = userEvent.setup();
     render(<App />);
-    await waitFor(() => expect(screen.getByRole("status").textContent).toMatch(/forecast/i));
+    await waitFor(() => expect(screen.getAllByRole("status").some((s) => /forecast/i.test(s.textContent ?? ""))).toBe(true));
     await waitFor(() => expect(screen.getByRole("button", { name: /load today's forecast/i }).textContent).toMatch(/retry/i));
     expect(rows().length).toBe(TRAILS.length);
     expect(screen.queryByRole("button", { name: /good weather/i })).toBeNull();

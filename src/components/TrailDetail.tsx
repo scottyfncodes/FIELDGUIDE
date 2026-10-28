@@ -6,9 +6,11 @@ import { MONTH_LBL, currentMonth, inSeason } from "../lib/season";
 import { bookHours, fmtHours } from "../lib/trails";
 import { verdict } from "../lib/weather";
 import { DiffTag, RatingInput, Stars, VerdictChip } from "./bits";
+import { placeByRef } from "../lib/places";
+import { NearbyNature, PlaceActions, YourFinds } from "./PlaceSections";
 
 /* Tiny locator: where in the state is this? */
-function Locator({ t }: { t: Trail }) {
+export function Locator({ t }: { t: { lat: number; lon: number } }) {
   const W = 88, H = 64;
   const lx = (lon: number) => ((lon - STATE.west) / (STATE.east - STATE.west)) * W;
   const ly = (lat: number) => ((STATE.north - lat) / (STATE.north - STATE.south)) * H;
@@ -44,6 +46,7 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
   const seasonNow = inSeason(t.prime, month);
   const sun = sunTimes(t.lat, t.lon);
   const hasApres = !!(area?.brew?.length || area?.eat?.length);
+  const place = placeByRef(`trail:${t.id}`);
 
   useEffect(() => { closeRef.current?.focus({ preventScroll: true }); }, [t.id]);
 
@@ -112,6 +115,8 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
         )}
       </section>
 
+      {place && <PlaceActions place={place} hiked={!!p.done} />}
+
       <section className="det-sec">
         <h3>When to go</h3>
         <div className="kv">
@@ -154,6 +159,11 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
         <div className="fieldlog-save">Saved on this device.</div>
         {p.done && <div className="stamp" aria-hidden="true">LOGGED</div>}
       </section>
+
+      {place && <>
+        <YourFinds place={place} />
+        <NearbyNature place={place} />
+      </>}
 
       {hasApres && (
         <section className="det-sec apres">

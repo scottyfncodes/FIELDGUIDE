@@ -3,6 +3,7 @@ import { cleanup } from "@testing-library/react";
 
 // jsdom gaps the app touches
 Element.prototype.scrollIntoView = function () {};
+window.scrollTo = (() => {}) as typeof window.scrollTo;
 
 beforeEach(() => {
   window.localStorage.clear();

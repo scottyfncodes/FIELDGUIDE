@@ -1,9 +1,20 @@
-# CO Trail Atlas: notes for contributors and agents
+# CO Field Atlas: notes for contributors and agents
+
+CO Field Atlas merged CO Trail Atlas, Leaf Hunter and LOOKUP; docs/CONSOLIDATION.md is the map.
 
 The look is a USGS quad sheet: paper, ink, pine and quad-red, Archivo for headings and
-IBM Plex Mono for map-style labels. Keep new UI in that voice.
+IBM Plex Mono for map-style labels. Keep new UI in that voice. Foliage colors mean
+foliage status; don't reuse them for anything else.
 
 Run `npm run check` (typecheck, unit tests, build, e2e) before pushing.
+
+- Never invent a fact or a number. Label what kind of claim it is with the `Tag` component
+  (field guide, your record, suggestion, estimate, computed, iNaturalist). Unknown stays unknown.
+- Identification is a key over the user's answers, not image analysis. Never word results as certain.
+- Match iNaturalist records to guide species by taxon id, never by name.
+- Don't change or remove the `co-trail-*` localStorage keys: existing users' logs live there.
+- Quest progress is derived from saved data only.
+- `src/lib/astro` and `src/lib/foliage` are verbatim ports; change them upstream too.
 
 ## Design guardrails
 
