@@ -1,22 +1,7 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
-/* Deterministic network: a canned forecast, no third-party fonts. */
-async function stubNetwork(page: Page, errors: string[]) {
-  page.on("pageerror", (e) => errors.push(e.message));
-  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
-  const ctx = page.context(); // context routes also cover service-worker fetches
-  await ctx.route("https://fonts.googleapis.com/**", (r) => r.fulfill({ status: 200, contentType: "text/css", body: "" }));
-  await ctx.route("https://fonts.gstatic.com/**", (r) => r.abort());
-  await ctx.route("https://api.open-meteo.com/**", (r) => {
-    const n = new URL(r.request().url()).searchParams.get("latitude")!.split(",").length;
-    const day = (i: number) => ({ daily: {
-      temperature_2m_max: [i % 7 === 0 ? 96 : 70], temperature_2m_min: [44], wind_speed_10m_max: [8],
-      wind_gusts_10m_max: [14], precipitation_probability_max: [i % 5 === 0 ? 35 : 5], weather_code: [1],
-    } });
-    return r.fulfill({ contentType: "application/json", body: JSON.stringify(Array.from({ length: n }, (_, i) => day(i))) });
-  });
-}
+import { stubNetwork } from "./stubs";
 
 const isMobile = (page: Page) => (page.viewportSize()?.width ?? 1000) < 900;
 
@@ -41,7 +26,7 @@ test.afterEach(async () => {
 
 test("boots into the atlas with a forecast and no layout overflow", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/co trail atlas/i);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/co field atlas/i);
   await expect(page.locator("li.row")).toHaveCount(47);
   await expect(page.locator("g.mark-good").first()).toBeVisible();
   await expect(page.locator("g.mark-poor").first()).toBeVisible();

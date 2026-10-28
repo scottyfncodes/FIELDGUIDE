@@ -7,7 +7,11 @@ export default defineConfig({
   testDir: "tests/e2e",
   fullyParallel: true,
   reporter: [["list"]],
-  use: { baseURL: "http://localhost:4174", trace: "retain-on-failure", serviceWorkers: "block" },
+  use: {
+    baseURL: "http://localhost:4174", trace: "retain-on-failure", serviceWorkers: "block",
+    /* sandboxes with a preinstalled browser point at it; CI uses Playwright's own */
+    launchOptions: process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {},
+  },
   webServer: {
     command: "npm run build && npx vite preview --port 4174 --strictPort",
     url: "http://localhost:4174",
