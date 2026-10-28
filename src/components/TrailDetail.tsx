@@ -3,7 +3,10 @@ import type { Area, LogEntry, StartPoint, Trail, Weather } from "../data/types";
 import { STATE, regionOfArea } from "../data/geography";
 import { directionsUrl, driveMin, fmtDrive, sunTimes } from "../lib/geo";
 import { MONTH_LBL, currentMonth, inSeason } from "../lib/season";
-import { bookHours, fmtHours } from "../lib/trails";
+import { bookHours, fmtHours, standing } from "../lib/trails";
+import { TRAILS } from "../data/trails";
+import { RING_FT, TopoPlate, ringsFor } from "./TopoPlate";
+import { Tag } from "./atlasBits";
 import { verdict } from "../lib/weather";
 import { DiffTag, RatingInput, Stars, VerdictChip } from "./bits";
 import { placeByRef } from "../lib/places";
@@ -21,6 +24,28 @@ export function Locator({ t }: { t: { lat: number; lon: number } }) {
       <rect x={lx(-104.99) - 1.5} y={ly(39.74) - 1.5} width="3" height="3" className="locator-city" />
       <circle cx={lx(t.lon)} cy={ly(t.lat)} r="4.5" className="locator-dot" />
     </svg>
+  );
+}
+
+/* One number, this trail against the other atlas trails: a tick for each, this one in red */
+function Standing({ t, k, unit, more }: { t: Trail; k: "mi" | "gain"; unit: string; more: string }) {
+  const s = standing(t, TRAILS, k);
+  const pos = (v: number) => `${((v - s.min) / (s.max - s.min || 1)) * 100}%`;
+  return (
+    <figure className="standing">
+      <figcaption>
+        <span>{k === "mi" ? "Distance" : "Climb"}</span>
+        <b>{s.below} of {s.others} others {k === "mi" ? "are shorter" : "climb less"}</b>
+      </figcaption>
+      <div className="standing-track" aria-hidden="true">
+        {TRAILS.filter((o) => o.id !== t.id).map((o) => <i key={o.id} style={{ left: pos(o[k]) }} />)}
+        <i className="standing-me" style={{ left: pos(t[k]) }} />
+      </div>
+      <div className="standing-scale" aria-hidden="true">
+        <span>{s.min.toLocaleString()} {unit}</span><span>{s.max.toLocaleString()} {unit}</span>
+      </div>
+      <span className="sr-only">{`${t[k].toLocaleString()} ${unit}: ${more} than ${s.below} of the other ${s.others} trails.`}</span>
+    </figure>
   );
 }
 
@@ -76,6 +101,7 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
       {shareMsg && <div className="det-toast" role="status">{shareMsg}</div>}
 
       <header className="det-head">
+        <TopoPlate id={t.id} gain={t.gain} className="det-plate" summit draw />
         <div className="det-head-text">
           <div className="det-eyebrow">
             {[region?.label, area?.label].filter(Boolean).join(" · ").toUpperCase()}
@@ -84,6 +110,7 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
           <div className="det-th">{t.th}</div>
         </div>
         <Locator t={t} />
+        <p className="det-plate-key">{ringsFor(t.gain)} {ringsFor(t.gain) === 1 ? "ring" : "rings"} · ~{RING_FT} ft of climb each</p>
       </header>
 
       {/* the four numbers people decide on */}
@@ -94,12 +121,11 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
         <div><dt>Difficulty</dt><dd><DiffTag d={t.diff} /><small><Stars n={t.views} label="Views" /> views</small></dd></div>
       </dl>
 
-      <div className="det-cta">
-        <a className="dir-btn" href={directionsUrl(t.lat, t.lon)} target="_blank" rel="noreferrer">
-          Directions to trailhead
-        </a>
-        <div className="det-drive">~{fmtDrive(drive)} drive from {start.label}<br /><span>estimate, not routed</span></div>
-      </div>
+      <section className="det-sec compare-sec" aria-label="Among the atlas trails">
+        <h3>Among the {TRAILS.length} atlas trails <Tag p="computed" /></h3>
+        <Standing t={t} k="mi" unit="mi" more="longer" />
+        <Standing t={t} k="gain" unit="ft" more="more climbing" />
+      </section>
 
       <section className={"det-wx" + (v ? " det-wx-" + v.toLowerCase() : "")} aria-label="Today's forecast">
         {w ? (
@@ -185,6 +211,14 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
           <p className="apres-note">Local picks. Hours and owners change, so check before you go.</p>
         </section>
       )}
+
+      {/* the primary action rides along at the bottom of the sheet, in thumb reach */}
+      <div className="det-cta">
+        <div className="det-drive"><b>~{fmtDrive(drive)} drive</b> from {start.label} <span>· estimate, not routed</span></div>
+        <a className="dir-btn" href={directionsUrl(t.lat, t.lon)} target="_blank" rel="noreferrer">
+          Directions to trailhead
+        </a>
+      </div>
     </article>
   );
 }

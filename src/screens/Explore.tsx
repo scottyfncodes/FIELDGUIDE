@@ -9,7 +9,7 @@ import { REGIONS, START_PRESETS } from "../data/geography";
 import { driveMin, fmtDrive } from "../lib/geo";
 import { MONTH_LBL, currentMonth } from "../lib/season";
 import {
-  DIFF_BUCKETS, EMPTY_FILTERS, SORT_OPTS, TIME_OPTS, activeFilterCount, bookHours, filterTrails, fmtHours, sortTrails,
+  DIFF_BUCKETS, EMPTY_FILTERS, SORT_OPTS, TIME_OPTS, activeFilterCount, bookHours, filterTrails, fmtHours, seasonPicks, sortTrails,
 } from "../lib/trails";
 import type { DiffBucket, Filters, SortKey, TimeBucket } from "../lib/trails";
 import { verdict } from "../lib/weather";
@@ -24,8 +24,10 @@ import type { AtlasMapHandle, MapPoint } from "../components/AtlasMap";
 import { ChipSelect, DiffTag, ToggleChip, VerdictChip } from "../components/bits";
 import { leafReports } from "../components/PlaceDetail";
 import { useActions } from "../components/PlaceSections";
-import { SpeciesArt } from "../components/atlasBits";
+import { SpeciesArt, Tag } from "../components/atlasBits";
+import { RING_FT, TopoPlate } from "../components/TopoPlate";
 
+const MONTH_NAME = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const TRAIL_BY_ID = new Map(TRAILS.map((t) => [t.id, t]));
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[’']/g, "");
 const matches = (q: string, ...hay: (string | undefined)[]) => {
@@ -53,12 +55,13 @@ interface Props {
   locErr: string | null;
   wx: WxPayload | null;
   wxErr: string | null;
+  onRetryWx: () => void;
   /** the trail whose sheet is open, if any (keeps it selected on the map) */
   openTrailId: string | null;
 }
 
 export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
-  { log, patchLog, start, chooseStart, locateMe, locBusy, locErr, wx, wxErr, openTrailId }, ref,
+  { log, patchLog, start, chooseStart, locateMe, locBusy, locErr, wx, wxErr, onRetryWx, openTrailId }, ref,
 ) {
   const act = useActions();
   const atlas = useAtlas();
@@ -121,6 +124,8 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
       .sort((a, b) => a.min - b.min);
   }, [layer, filters.q, start]);
 
+  const picks = useMemo(() => seasonPicks(TRAILS, month, start), [month, start]);
+
   const speciesHits = useMemo(() => (filters.q.trim().length >= 3
     ? SPECIES.filter((s) => matches(filters.q, s.common, s.sci)).slice(0, 4) : []), [filters.q]);
 
@@ -163,15 +168,18 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
     return (
       <li key={t.id} className={"row" + (sel === t.id ? " row-sel" : "") + (p.done ? " row-done" : "")}>
         <button type="button" className="row-main" onClick={() => { setSel(t.id); openTrail(t.id); }}>
-          <span className="row-top">
-            <span className="row-name">{t.name}</span>
-            <VerdictChip v={v} small />
-          </span>
-          {showArea && <span className="row-where">{AREAS[t.area]?.label ?? ""} · ~{fmtDrive(driveMin(start, t))}</span>}
-          <span className="row-meta">
-            <DiffTag d={t.diff} />
-            <span>{t.mi} mi · {t.gain.toLocaleString()} ft · ~{fmtHours(bookHours(t))}</span>
-            {t.views >= 5 && <span className="tag-view" title="Top-rated views">★ views</span>}
+          <TopoPlate id={t.id} gain={t.gain} className="row-plate" />
+          <span className="row-body">
+            <span className="row-top">
+              <span className="row-name">{t.name}</span>
+              <VerdictChip v={v} small />
+            </span>
+            {showArea && <span className="row-where">{AREAS[t.area]?.label ?? ""} · ~{fmtDrive(driveMin(start, t))}</span>}
+            <span className="row-meta">
+              <DiffTag d={t.diff} />
+              <span>{t.mi} mi · {t.gain.toLocaleString()} ft · ~{fmtHours(bookHours(t))}</span>
+              {t.views >= 5 && <span className="tag-view" title="Top-rated views">★ views</span>}
+            </span>
           </span>
         </button>
         <button type="button" className={"row-check" + (p.done ? " on" : "")} aria-pressed={!!p.done}
@@ -195,6 +203,12 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
   return (
     <div className="layout">
       <section className="map-col" ref={mapSecRef} aria-label="Map">
+        {/* quad-sheet collar: what this sheet covers, and today's date */}
+        <div className="collar">
+          <span>Sheet · Colorado</span>
+          <span className="collar-mid">{TRAILS.length} trails · {COLORADO_LOCATIONS.length} color · {SITES.length} dark sky</span>
+          <span>{now.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" })}</span>
+        </div>
         <AtlasMap ref={mapRef} key={layer} trails={mapPoints} allTrails={allPoints} log={layer === "trail" ? log : {}}
           verdictFor={layer === "trail" ? verdictFor : () => null} selected={sel}
           onSelect={(id) => setSel(id)} onRegion={pickRegion} start={start}
@@ -204,6 +218,7 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
           {selTrail && filtered.includes(selTrail) && openTrailId !== selTrail.id && (
             <div className="preview" role="group" aria-label={`Selected: ${selTrail.name}`}>
               <button type="button" className="preview-main" onClick={() => openTrail(selTrail.id)}>
+                <TopoPlate id={selTrail.id} gain={selTrail.gain} className="preview-plate" />
                 <span className="preview-eyebrow">{AREAS[selTrail.area]?.label} · ~{fmtDrive(driveMin(start, selTrail))} drive</span>
                 <span className="preview-name">{selTrail.name}</span>
                 <span className="preview-meta">
@@ -319,11 +334,45 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
             </span>
             {nFilters > 0 && <button type="button" className="clear-btn" onClick={clearFilters}>Clear {nFilters > 1 ? `${nFilters} filters` : "filter"}</button>}
           </div>
-          {(locErr || wxErr) && <p className="notice" role="status">{locErr || wxErr}</p>}
+          {locErr && <p className="notice" role="status">{locErr}</p>}
+          {!locErr && wxErr && (
+            <div className="notice notice-row" role="status">
+              <span>{wxErr}</span>
+              <button type="button" className="clear-btn" onClick={onRetryWx}>Retry forecast</button>
+            </div>
+          )}
+
+          {nFilters === 0 && picks.length > 0 && (
+            <section className="shelf" aria-labelledby="shelf-hd">
+              <div className="shelf-head">
+                <h3 id="shelf-hd">In season this {MONTH_NAME[month - 1]} <Tag p="reference" /></h3>
+                <p>Best months from the atlas notes, best views first. Each ring is about {RING_FT} ft of climbing.</p>
+              </div>
+              <ul className="shelf-track">
+                {picks.map((t, i) => (
+                  <li key={t.id} className="pick-item" style={{ ["--i" as string]: i }}>
+                    <button type="button" className="pick" onClick={() => { setSel(t.id); openTrail(t.id); }}>
+                      <span className="pick-plate"><TopoPlate id={t.id} gain={t.gain} summit /></span>
+                      <span className="pick-where">{AREAS[t.area]?.label} · ~{fmtDrive(driveMin(start, t))}</span>
+                      <span className="pick-name">{t.name}</span>
+                      <span className="pick-meta"><DiffTag d={t.diff} /><span>{t.mi} mi · {t.gain.toLocaleString()} ft</span></span>
+                      <span className="pick-season">{t.prime}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {sorted.length === 0 ? (
             <div className="empty">
-              <p>No trails match{filters.q ? <> “{filters.q}”</> : null} with these filters.</p>
+              <svg className="empty-art" viewBox="0 0 120 80" aria-hidden="true">
+                <path d="M10,62 C30,48 46,66 64,54 C82,42 96,58 112,48" />
+                <path d="M18,40 C34,30 50,44 66,34 C82,24 94,36 106,30" />
+                <path d="M54,22 l6,-10 l6,10 z" className="empty-summit" />
+              </svg>
+              <p className="empty-title">No trails match{filters.q ? <> “{filters.q}”</> : null} with these filters.</p>
+              <p>This part of the sheet is blank. Loosen a filter, or start over.</p>
               <button type="button" className="clear-btn" onClick={clearFilters}>Show all {TRAILS.length} trails</button>
             </div>
           ) : groups ? (

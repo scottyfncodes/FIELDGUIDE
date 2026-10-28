@@ -5,8 +5,10 @@ import { START_PRESETS } from "../../src/data/geography";
 import { directionsUrl, driveMin, fmtDrive, haversineMi, ringMiles, sunTimes } from "../../src/lib/geo";
 import { inSeason } from "../../src/lib/season";
 import {
-  EMPTY_FILTERS, activeFilterCount, bookHours, diffBucket, filterTrails, fmtHours, inTimeBucket, matchesQuery, sortTrails,
+  EMPTY_FILTERS, activeFilterCount, bookHours, diffBucket, filterTrails, fmtHours, inTimeBucket, matchesQuery, seasonPicks, sortTrails,
+  standing,
 } from "../../src/lib/trails";
+import { ringsFor } from "../../src/components/TopoPlate";
 import { fetchForecast, forecastUrl, isFresh, parseForecast, todayKey, verdict, wmo } from "../../src/lib/weather";
 import { loadKey, saveKey } from "../../src/lib/storage";
 
@@ -161,5 +163,30 @@ describe("storage", () => {
     const spy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("QuotaExceeded"); });
     expect(saveKey("k", 1)).toBe(false);
     spy.mockRestore();
+  });
+});
+
+describe("living field guide helpers", () => {
+  it("topo plate rings encode the listed climb, one per ~500 ft, never zero", () => {
+    expect(ringsFor(0)).toBe(1);
+    expect(ringsFor(300)).toBe(1);
+    expect(ringsFor(1000)).toBe(2);
+    expect(ringsFor(3600)).toBe(7);
+  });
+
+  it("standing counts the other atlas trails below this one", () => {
+    const longest = TRAILS.reduce((a, b) => (b.gain > a.gain ? b : a));
+    const s = standing(longest, TRAILS, "gain");
+    expect(s.others).toBe(TRAILS.length - 1);
+    expect(s.max).toBe(longest.gain);
+    expect(s.below).toBe(TRAILS.filter((t) => t.gain < longest.gain).length);
+  });
+
+  it("season picks name the month, skip year-round trails, best views first", () => {
+    const picks = seasonPicks(TRAILS, 7, START_PRESETS[0]);
+    expect(picks.length).toBeGreaterThan(0);
+    expect(picks.length).toBeLessThanOrEqual(8);
+    picks.forEach((t) => { expect(inSeason(t.prime, 7)).toBe(true); expect(t.prime).not.toMatch(/year-round/i); });
+    for (let i = 1; i < picks.length; i++) expect(picks[i - 1].views).toBeGreaterThanOrEqual(picks[i].views);
   });
 });

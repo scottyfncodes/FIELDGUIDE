@@ -188,7 +188,7 @@ export default function App() {
         <main className="tab-body" {...behindSheet}>
           <div hidden={route.tab !== "explore"}>
             <Explore ref={exploreRef} log={log} patchLog={patchLog} start={start} chooseStart={chooseStart}
-              locateMe={locateMe} locBusy={locBusy} locErr={locErr} wx={wx} wxErr={wxErr}
+              locateMe={locateMe} locBusy={locBusy} locErr={locErr} wx={wx} wxErr={wxErr} onRetryWx={refreshWeather}
               openTrailId={trail?.id ?? null} />
           </div>
           {route.tab === "identify" && <Identify at={(placeByRef(route.params.at)?.ref) ?? null} onDone={() => { nav.go({ tab: "atlas", sheet: null, params: {} }, { replace: true }); window.scrollTo({ top: 0 }); }} />}
@@ -204,6 +204,9 @@ export default function App() {
               <span>{TAB_LABEL[t]}</span>
             </button>
           ))}
+          {/* the index tab slides to the current section (last child, so the buttons keep their order) */}
+          <span className="tab-ink" aria-hidden="true"
+            style={{ ["--i" as string]: (["explore", "identify", "atlas", "quests"] as Tab[]).indexOf(route.tab) }} />
         </nav>
 
         {prompted && (
