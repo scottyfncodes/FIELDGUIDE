@@ -844,3 +844,207 @@ h3 .prov { margin-left: 6px; }
   .tally-row dd { font-size: 22px; }
   .q-choices { grid-template-columns: 1fr 1fr; }
 }
+
+/* ============================================================
+   THE LIVING FIELD GUIDE: topo plates, the in-season shelf,
+   the detail hero, the sliding tab index, and the small motions.
+   Native CSS only. Every motion is short, runs once, and the
+   reduced-motion rule above turns it off.
+   ============================================================ */
+:root { --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1); }
+
+/* topo plate: rings = climb, decoration otherwise */
+.plate { display: block; overflow: visible; }
+.plate-ring { fill: none; stroke: var(--contour); stroke-width: 2.2; stroke-linejoin: round; }
+.plate-index { stroke: var(--contour-text); stroke-width: 3.6; }
+.plate-summit { fill: var(--quadred); }
+.plate-draw .plate-ring {
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: ink-ring 0.9s var(--ease-out) forwards;
+  animation-delay: calc(0.12s + var(--i) * 0.07s);
+}
+@keyframes ink-ring { to { stroke-dashoffset: 0; } }
+
+/* map: the contours ink themselves in when the sheet opens */
+.contour { animation: ink-draw 1.6s var(--ease-out) 0.1s both; }
+@keyframes ink-draw {
+  from { stroke-dasharray: 2400 2400; stroke-dashoffset: 2400; }
+  to { stroke-dasharray: 2400 0; stroke-dashoffset: 0; }
+}
+
+/* sheet collar above the map, like the margin of a quad */
+.collar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin: 0 0 6px; padding: 4px 1px; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink-faint);
+  font-family: var(--mono); font-size: 10.5px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--contour-text); white-space: nowrap;
+}
+.collar span:first-child { color: var(--pine); font-weight: 600; }
+.collar-mid { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+@media (max-width: 430px) { .collar-mid { display: none; } }
+
+/* list rows carry a small plate */
+.row-main { flex-direction: row; align-items: center; gap: 11px; padding-left: 8px; transition: background-color 0.15s; }
+.row-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.row-plate {
+  flex: none; width: 46px; height: 46px; padding: 3px;
+  background: var(--paper-2); border: 1px solid var(--ink-faint);
+}
+.row-done .row-plate .plate-ring { stroke: var(--pine-2); }
+.row-done .row-plate .plate-index { stroke: var(--pine); }
+.row-sel .row-plate { border-color: var(--quadred); }
+.row-check .box-on { animation: tick 0.28s var(--ease-out); }
+@keyframes tick { 40% { transform: scale(1.22); } }
+.row-check:active .box { transform: scale(0.9); }
+
+/* rows and shelf cards rise in as they scroll into view, where the browser can drive it */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .rows .row { animation: row-in linear both; animation-timeline: view(); animation-range: entry 0% entry 70%; }
+  }
+}
+@keyframes row-in { from { opacity: 0.2; transform: translateY(10px); } }
+
+/* in-season shelf */
+.shelf { margin: 14px -12px 4px; }
+.shelf-head { padding: 0 14px; }
+.shelf-head h3 {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 4px 2px; margin: 0;
+  font-size: 22px; font-weight: 900; font-stretch: 78%; line-height: 1.05; color: var(--pine);
+}
+.shelf-head p { margin: 4px 0 0; font-size: 13px; color: var(--ink-soft); }
+.shelf-track {
+  list-style: none; display: flex; gap: 12px; margin: 0; padding: 12px 14px 12px;
+  overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding: 0 14px; scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.shelf-track::-webkit-scrollbar { display: none; }
+.pick-item { flex: none; width: min(232px, 68vw); scroll-snap-align: start; animation: rise 0.35s var(--ease-out) backwards; animation-delay: calc(var(--i) * 0.05s); }
+.pick {
+  width: 100%; height: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 4px;
+  padding: 0 0 12px; text-align: left; color: var(--ink);
+  background: var(--card); border: 1.5px solid var(--ink); box-shadow: 3px 3px 0 var(--pine);
+  transition: transform 0.12s var(--ease-out), box-shadow 0.12s var(--ease-out), border-color 0.15s;
+}
+.pick:hover { border-color: var(--pine); }
+.pick:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--pine); }
+.pick-plate {
+  display: block; height: 104px; padding: 8px 0; margin-bottom: 6px;
+  background: var(--paper-2); border-bottom: 1.5px solid var(--ink);
+}
+.pick-plate .plate { width: 100%; height: 100%; }
+.pick-plate .plate-ring { stroke-width: 1.15; }
+.pick-plate .plate-index { stroke-width: 2.1; }
+.pick-where, .pick-name, .pick-meta, .pick-season { padding: 0 12px; }
+.pick-where {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--contour-text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pick-name { font-size: 19px; font-weight: 850; font-stretch: 82%; line-height: 1.08; color: var(--pine); }
+.pick-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 2px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); }
+.pick-season { margin-top: auto; padding-top: 6px; font-family: var(--mono); font-size: 11px; color: var(--good); }
+
+/* empty + error states */
+.empty { text-align: center; padding: 30px 12px 34px; border: 2px dashed var(--ink-faint); margin-top: 14px; background: var(--paper); }
+.empty-art { width: 132px; height: 88px; display: block; margin: 0 auto 6px; }
+.empty-art path { fill: none; stroke: var(--contour); stroke-width: 1.6; stroke-dasharray: 3 4; }
+.empty-art .empty-summit { fill: var(--paper-2); stroke: var(--ink-soft); stroke-dasharray: none; stroke-linejoin: round; }
+.empty-title { font-size: 21px; font-weight: 900; font-stretch: 80%; color: var(--pine); line-height: 1.1; margin: 0 0 6px !important; }
+.notice-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap;
+  padding: 8px 10px; border: 1.5px solid var(--poor); border-left-width: 4px; background: #F7E6DD;
+}
+
+/* map preview card: the plate sits behind the words */
+.preview-main { position: relative; overflow: hidden; }
+.preview-main > span { position: relative; }
+.preview-plate { position: absolute; right: -6px; top: 50%; width: 92px; height: 92px; transform: translateY(-50%); opacity: 0.55; }
+.preview-plate .plate-ring { stroke-width: 1.6; }
+
+/* ---------- trail detail: a printed plate for a header ---------- */
+.det-head {
+  position: relative; overflow: hidden; display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 10px 12px;
+  margin: 0 -16px; padding: 22px 16px 12px; background: var(--paper-2); border-bottom: 2px solid var(--ink);
+}
+.det-head > :not(.det-plate) { position: relative; z-index: 1; }
+.det-head-text { grid-column: 1 / -1; padding-right: 40px; }
+.det-name { font-size: clamp(32px, 10vw, 46px); text-wrap: balance; }
+.det-plate { position: absolute; right: -52px; top: -34px; width: 230px; height: 230px; opacity: 0.6; z-index: 0; }
+.det-plate .plate-ring { stroke-width: 0.8; }
+.det-plate .plate-index { stroke-width: 1.5; }
+.det-head .locator { grid-row: 2; grid-column: 2; margin: 0; background: var(--paper); }
+.det-plate-key {
+  grid-row: 2; grid-column: 1; margin: 0; align-self: end;
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--contour-text);
+}
+.det-head, .stats, .compare-sec, .det-wx { animation: rise 0.32s var(--ease-out) backwards; }
+.stats { animation-delay: 0.06s; }
+.det-wx { animation-delay: 0.1s; }
+.compare-sec { animation-delay: 0.14s; }
+.stats > div { transition: background-color 0.15s; }
+.compare-sec + .det-wx { margin-top: 18px; }
+
+/* among the atlas trails */
+.standing { margin: 12px 0 0; }
+.standing figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.standing figcaption span { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--contour-text); }
+.standing figcaption b { font-size: 14px; font-weight: 650; }
+.standing-track { position: relative; height: 24px; margin: 6px 4px 0; border-bottom: 1.5px solid var(--ink); }
+.standing-track i { position: absolute; bottom: 0; width: 1.5px; height: 9px; margin-left: -0.75px; background: var(--ink-soft); opacity: 0.45; }
+.standing-track .standing-me { width: 3px; height: 22px; margin-left: -1.5px; background: var(--quadred); opacity: 1; }
+.standing-track .standing-me::after {
+  content: ""; position: absolute; top: -5px; left: 50%; width: 9px; height: 9px; margin-left: -4.5px;
+  background: var(--quadred); border-radius: 50%; border: 1.5px solid var(--paper);
+}
+.standing-scale { display: flex; justify-content: space-between; margin: 3px 4px 0; font-family: var(--mono); font-size: 10.5px; color: var(--ink-soft); }
+
+/* the primary action sticks to the bottom of the sheet, in thumb reach */
+.det-cta {
+  position: sticky; bottom: 0; z-index: 3; flex-wrap: nowrap;
+  margin: 26px -16px calc(-32px - env(safe-area-inset-bottom));
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  background: var(--paper); border-top: 3px double var(--ink);
+}
+.det-cta { flex-direction: column; align-items: stretch; gap: 6px; padding-top: 8px; }
+.det-cta .det-drive { flex: none; font-size: 11.5px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.det-cta .det-drive b { font-weight: 600; }
+.det-cta .dir-btn { flex: none; min-height: 50px; transition: background-color 0.15s, transform 0.12s; }
+.dir-btn:hover { background: var(--pine-2); border-color: var(--pine-2); }
+.dir-btn:active { transform: translateY(1px); }
+
+/* the LOGGED stamp lands when you mark a trail hiked */
+.fieldlog .stamp { animation: stamp-in 0.34s cubic-bezier(0.3, 1.5, 0.5, 1) backwards; }
+@keyframes stamp-in { from { transform: rotate(-16deg) scale(1.7); opacity: 0; } }
+.done-toggle .box-on { animation: tick 0.28s var(--ease-out); }
+
+/* ---------- navigation: a sliding index tab ---------- */
+.tabbar { --padl: max(4px, env(safe-area-inset-left)); --padr: max(4px, env(safe-area-inset-right)); }
+.tab { position: relative; transition: color 0.18s; }
+.tab.on span { border-bottom: 0; }
+.tab svg { transition: transform 0.2s var(--ease-out); }
+.tab.on svg { transform: translateY(-1px); }
+.tab:active svg { transform: scale(0.9); }
+.tab:hover:not(.on) { color: var(--ink); }
+.tab-ink {
+  position: absolute; top: -3px; height: 4px; pointer-events: none;
+  width: calc((100% - var(--padl) - var(--padr)) / 4);
+  left: calc(var(--padl) + (100% - var(--padl) - var(--padr)) * var(--i) / 4);
+  transition: left 0.3s var(--ease-out);
+}
+.tab-ink::before { content: ""; position: absolute; inset: 0 30%; background: var(--quadred); }
+
+/* selection states that feel set, not flipped */
+.region-chip, .layer-tab, .fchip, .pa-btn, .clear-btn { transition: background-color 0.15s, color 0.15s, border-color 0.15s; }
+.region-chip:hover:not(.on):not(:disabled), .layer-tab:hover:not(.on) { background: var(--paper-2); }
+.zbtn { transition: background-color 0.15s; }
+.zbtn:hover { background: var(--paper-2); }
+
+@media (min-width: 900px) {
+  .shelf { margin: 14px 0 4px; }
+  .shelf-head { padding: 0 2px; }
+  .shelf-track { padding: 12px 2px; scroll-padding: 0 2px; }
+  .det-plate { width: 260px; height: 260px; }
+}
+@media (max-width: 380px) {
+  .row-plate { width: 40px; height: 40px; }
+}

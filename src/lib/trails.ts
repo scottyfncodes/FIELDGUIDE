@@ -109,3 +109,26 @@ export function activeFilterCount(f: Filters): number {
   return [f.q.trim() !== "", f.diff !== "any", f.time !== "any", !!f.region, f.seasonOnly, f.notDone, f.goodWx]
     .filter(Boolean).length;
 }
+
+/* ---------- STANDING ----------
+   Where one trail sits among the rest of the atlas on a single number:
+   how many of the others are below it. Plain counting, no ranking claims. */
+export function standing(t: Trail, all: Trail[], key: "mi" | "gain"): { below: number; others: number; min: number; max: number } {
+  const others = all.filter((o) => o.id !== t.id);
+  const vals = all.map((o) => o[key]);
+  return {
+    below: others.filter((o) => o[key] < t[key]).length,
+    others: others.length,
+    min: Math.min(...vals),
+    max: Math.max(...vals),
+  };
+}
+
+/* Trails whose listed best months name the given month (year-round ones are
+   left out: they're always "in season"), most scenic first, then nearest. */
+export function seasonPicks(trails: Trail[], month: number, start: StartPoint, n = 8): Trail[] {
+  return trails
+    .filter((t) => !/year-round/i.test(t.prime) && inSeason(t.prime, month))
+    .sort((a, b) => b.views - a.views || (driveMin(start, a) ?? 0) - (driveMin(start, b) ?? 0) || a.name.localeCompare(b.name))
+    .slice(0, n);
+}
