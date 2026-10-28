@@ -2,9 +2,15 @@
 
 CO Field Atlas merged CO Trail Atlas, Leaf Hunter and LOOKUP; docs/CONSOLIDATION.md is the map.
 
-The look is a USGS quad sheet: paper, ink, pine and quad-red, Archivo for headings and
-IBM Plex Mono for map-style labels. Keep new UI in that voice. Foliage colors mean
-foliage status; don't reuse them for anything else.
+The look is a USGS quad sheet framed like a storybook film: paper, ink, pine and quad-red,
+Archivo for names and reading text, IBM Plex Mono for map-style labels, and Jost (a Futura
+cut) only for title cards and intertitles. Each tab and sheet is a scene with its own color
+block, set by `data-scene` (`--scene`, `--scene-ink`, `--scene-accent`, `--scene-soft`,
+`--scene-deep` in `index.css`): Explore and trails forest and parchment, Identify powder blue
+and mustard, My Atlas and plants sage and terracotta, Quests mustard and burgundy, fall-color
+places burgundy and dusty pink, dark skies night and powder. Favor centered, symmetrical
+compositions and double rules. Keep new UI in that voice. Foliage colors mean foliage
+status; don't reuse them for anything else.
 
 Run `npm run check` (typecheck, unit tests, build, e2e) before pushing.
 

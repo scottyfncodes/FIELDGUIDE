@@ -33,6 +33,7 @@ export function Atlas({ log }: { log: Log }) {
   return (
     <div className="screen atlas">
       <header className="atlas-hd">
+        <p className="screen-eyebrow" aria-hidden="true">No. 3 · The collection</p>
         <h2 className="screen-title">My Atlas</h2>
         <dl className="tally-row">
           <div><dt>Species</dt><dd>{found.size}<small>/{SPECIES.length}</small></dd></div>
