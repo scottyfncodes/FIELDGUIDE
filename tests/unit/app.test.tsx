@@ -9,7 +9,21 @@ import { _clearDiscovery } from "../../src/lib/discover";
 import { _resetThrottle } from "../../src/lib/geocode";
 import { sourceResponse } from "../fixtures/sources";
 
-const rows = () => screen.getByRole("region", { name: "Atlas classics" }).querySelectorAll("li.row");
+/* These tests drive the whole app through 10-30 real interactions each in
+   jsdom. On a busy 2-4 CPU machine a full journey can need more than the
+   5 s default even with the scoped queries below. */
+vi.setConfig({ testTimeout: 15_000 });
+
+/* Role queries over the whole document compute a role for each of its
+   ~1,200 nodes (map, trail list), 300-500 ms apiece in jsdom. The helpers
+   below are called many times per test, so they find the labelled trail
+   list directly and scope their role queries to it. */
+const trailList = () => document.querySelector<HTMLElement>('section[aria-label="Atlas classics"]')!;
+const rows = () => trailList().querySelectorAll("li.row");
+const openTrail = async (user: ReturnType<typeof userEvent.setup>, name: RegExp) => {
+  await user.click(within(trailList()).getAllByRole("button", { name }).find((b) => b.classList.contains("row-main"))!);
+  return screen.getByRole("dialog");
+};
 
 /* every live source answers from the fixtures; the forecast hangs as usual */
 function stubSources(opts: { geo?: "ok" | "fail" } = {}) {
@@ -24,10 +38,6 @@ function stubSources(opts: { geo?: "ok" | "fail" } = {}) {
   }));
   return calls;
 }
-const openTrail = async (user: ReturnType<typeof userEvent.setup>, name: RegExp) => {
-  await user.click(screen.getAllByRole("button", { name }).find((b) => b.classList.contains("row-main"))!);
-  return screen.getByRole("dialog");
-};
 
 describe("app boot", () => {
   it("renders the atlas with every trail, the map and the discovery controls", async () => {
