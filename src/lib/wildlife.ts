@@ -64,7 +64,7 @@ export async function fetchNearbyWildlife(
   if (hit) return hit;
   try {
     const j = await getJson(
-      `/observations/species_counts?lat=${lat.toFixed(4)}&lng=${lon.toFixed(4)}&radius=${radius}&quality_grade=research` +
+      `/observations/species_counts?lat=${lat.toFixed(2)}&lng=${lon.toFixed(2)}&radius=${radius}&quality_grade=research` +
       `&iconic_taxa=${iconic}${months ? `&month=${months.join(",")}` : ""}&per_page=${opts.perPage ?? 30}`, opts.fetchImpl);
     const out = parseWildSpecies(j);
     store(key, out);
@@ -74,21 +74,36 @@ export async function fetchNearbyWildlife(
   }
 }
 
+/* A status counts for the "sensitive" safeguard only where it applies to
+   this app's people: worldwide (no place), the United States, or Colorado.
+   iNaturalist lists every state and province's status, so a species can be
+   rare in Yukon and common here (checked live: Mountain Bluebird is S2B in
+   Yukon, black bear S1 in North Dakota; Canada lynx is S1 in Colorado). */
+const RELEVANT_PLACE = /^(colorado|united states)\b/i;
+export const statusApplies = (s: Pick<ConservationStatus, "place">) => !s.place || RELEVANT_PLACE.test(s.place);
+const atRisk = (s: ConservationStatus) =>
+  (s.iucn != null && s.iucn >= 30 && s.iucn < 70) || /\b(endangered|threatened|vulnerable)\b/i.test(s.statusName ?? "") ||
+  /^(S1|S2|G1|G2|EN|CR|VU|LE|LT|T|E)(\b|[A-Z])/i.test(s.status);
+
 export function parseWildTaxon(t: any): WildTaxon | null {
   if (!t || typeof t.id !== "number") return null;
-  const statuses: ConservationStatus[] = (Array.isArray(t.conservation_statuses) ? t.conservation_statuses : [])
+  const raw: (ConservationStatus & { obscured: boolean })[] = (Array.isArray(t.conservation_statuses) ? t.conservation_statuses : [])
     .filter((s: any) => s && typeof s.status === "string")
     .map((s: any) => ({
       authority: s.authority ?? null, status: s.status, statusName: s.status_name ?? null,
       place: s.place?.display_name ?? s.place?.name ?? null, iucn: typeof s.iucn === "number" ? s.iucn : null,
+      obscured: s.geoprivacy === "obscured" || s.geoprivacy === "private",
     }));
   const cs = t.conservation_status;
-  if (cs && typeof cs.status === "string" && !statuses.some((s) => s.status === cs.status && s.authority === (cs.authority ?? null))) {
-    statuses.unshift({ authority: cs.authority ?? null, status: cs.status, statusName: cs.status_name ?? null, place: cs.place?.display_name ?? null, iucn: typeof cs.iucn === "number" ? cs.iucn : null });
+  if (cs && typeof cs.status === "string" && !raw.some((s) => s.status === cs.status && s.authority === (cs.authority ?? null))) {
+    raw.unshift({ authority: cs.authority ?? null, status: cs.status, statusName: cs.status_name ?? null, place: cs.place?.display_name ?? null,
+      iucn: typeof cs.iucn === "number" ? cs.iucn : null, obscured: cs.geoprivacy === "obscured" || cs.geoprivacy === "private" });
   }
-  /* IUCN codes as iNaturalist numbers them: 30 vulnerable and up is threatened */
-  const sensitive = t.threatened === true || statuses.some((s) => (s.iucn != null && s.iucn >= 30 && s.iucn < 70) ||
-    /\b(endangered|threatened|vulnerable)\b/i.test(s.statusName ?? "") || ["S1", "S2", "G1", "G2", "EN", "CR", "VU", "T", "E"].includes(s.status.toUpperCase()));
+  const relevant = raw.filter(statusApplies);
+  /* iNaturalist's own flag, or a status here that is at risk or makes iNaturalist hide locations */
+  const sensitive = t.threatened === true || relevant.some((s) => s.obscured || atRisk(s));
+  /* show the statuses that apply here first; the rest are other places' lists */
+  const statuses = [...relevant, ...raw.filter((s) => !statusApplies(s))].map(({ obscured: _o, ...s }) => s);
   return {
     id: t.id, name: String(t.name ?? ""), common: t.preferred_common_name ?? null, rank: String(t.rank ?? ""),
     iconic: t.iconic_taxon_name ?? null, photo: parsePhoto(t.default_photo), summary: stripHtml(t.wikipedia_summary),
@@ -98,7 +113,7 @@ export function parseWildTaxon(t: any): WildTaxon | null {
 }
 
 export async function fetchWildTaxon(id: number, fetchImpl?: typeof fetch): Promise<WildTaxon | null> {
-  const key = `wtaxon:${id}`;
+  const key = `wtaxon2:${id}`; // v2: sensitivity scoped to Colorado / US / worldwide
   const hit = cached<WildTaxon>(key, 30 * DAY);
   if (hit) return hit;
   try {

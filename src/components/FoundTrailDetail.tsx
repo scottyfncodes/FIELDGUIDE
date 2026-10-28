@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { foundById, climbFt, difficultyText, fetchElevations, fmtMi, gradeText, longestPath, pathMi, resample, seasonText } from "../lib/discover";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { foundById, foundVersion, subscribeFound, climbFt, difficultyText, fetchElevations, fmtMi, gradeText, longestPath, pathMi, resample, seasonText } from "../lib/discover";
 import type { FoundTrail, Origin } from "../lib/discover";
 import { SOURCE_META } from "../lib/trailSources";
 import type { SourceKey } from "../lib/trailSources";
@@ -125,6 +125,7 @@ export function FoundTrailDetail({ id, origin, onClose }: { id: string; origin: 
   const act = useActions();
   const d = useAtlas();
   const closeRef = useRef<HTMLButtonElement>(null);
+  useSyncExternalStore(subscribeFound, foundVersion, foundVersion); // re-render when a search lands
   const live = foundById(id);
   const snap = foundSnapshot(d, id);
   const v = live ? viewOf(live) : snap ? viewOfSnapshot(snap) : null;

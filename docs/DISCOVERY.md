@@ -51,11 +51,34 @@ Nothing is bundled, so coverage doesn't cost download size.
 | **OpenStreetMap** via Overpass | North America (capped at 15 mi radius) | named footpaths, SAC scale, surface, dog rules | Overpass refuses datacenter clients (406), so it was written to its documented JSON format and couldn't be checked from the build box. If it fails, the other sources still show and the footer says it didn't answer |
 | **Atlas classics** | the original 47 | field-checked notes | in-app |
 
+**Checked live on 2026-10-28** by running the app's own `discover()` from a Vercel
+Sandbox (a datacenter, not a phone):
+
+| Search | COTREX | USFS | OSM | Trails |
+| --- | --- | --- | --- | --- |
+| Boulder, CO, 10 mi | 1,296 segments | 32 | failed (406) | 400 |
+| Jackson, WY, 10 mi | skipped | 115 | failed | 93 |
+| Moab, UT, 10 mi | skipped | 0 | failed | **0** |
+| Banff, AB, 10 mi | skipped | skipped | failed | **0** |
+| Denver, 50 mi | 9,084 in range: capped (see below) | 961 | failed | 626 |
+
+Both ArcGIS layers support `resultOffset` paging (3 pages, no duplicates). Outside
+Colorado and the national forests, coverage depends entirely on OpenStreetMap, which
+refuses datacenter clients, so it is **unverified until checked from a phone**. Moab
+(BLM land) and Canada show nothing without it. When OSM fails and nothing else is found,
+the app says a source didn't answer rather than "no trails here".
+
 How a search works (`lib/discover.ts`):
 
 1. **Count, then page.** Each ArcGIS layer is counted first. If the radius holds more
-   than 3,000 segments, the box halves (nearest first) and the footer says so. Records
-   are then paged with `resultOffset`.
+   than 6,000 segments (a 50 mi Front Range search holds about 9,100), the box shrinks
+   in proportion to the overflow, nearest first, and the footer says how far it reached.
+   Records are then paged with `resultOffset`.
+   Each source has a deadline (45 s ArcGIS, 35 s Overpass). COTREX and USFS results show
+   as soon as they arrive; OpenStreetMap merges in when it answers.
+   **Privacy:** the services get the search point rounded to 0.01° (about 1 km), with
+   the box widened by a mile. Exact distances are computed on the phone. The town-name
+   lookup and iNaturalist "seen nearby" queries are rounded the same way.
 2. **Segments to trails.** A source's segments are grouped by normalized name and
    manager, then split into pieces that actually connect. Two "Mesa Trail"s miles apart
    stay two trails.
@@ -121,7 +144,12 @@ approved partner token, so it isn't an option today.
 5. **Save** to the journal: place (including saved search trails), note, and location as
    *none*, *approximate (~1 km)* or *exact*. Species iNaturalist marks as threatened or
    at risk never keep coordinates. When sensitivity can't be checked (offline), location
-   isn't kept either.
+   isn't kept either. "Sensitive" counts only statuses that apply here (worldwide, the
+   US or Colorado) plus iNaturalist's own location-hiding. iNaturalist lists every
+   state's and province's rank, and checked live, Mountain Bluebird (S2B in Yukon) and
+   black bear (S1 in North Dakota) would otherwise read as at risk, while Canada lynx is
+   correctly flagged (S1 in Colorado). The full taxon record is always fetched before
+   saving, because search results carry no statuses.
 
 Trail pages now list **wildlife recorded nearby** (birds / insects & spiders / mammals &
 more). These are observed sightings, and the copy says it isn't a list of everything
@@ -135,9 +163,15 @@ that lives there. iNaturalist already blurs sensitive species' locations.
   million tokens that's roughly **$0.02–0.05 per identification**, paid per use, with no
   subscription. `IDENTIFY_MODEL=claude-haiku-5-5` would cut that by about 40×, at some
   loss of accuracy.
-- **Guard rails in code:** off without a key (the UI says so honestly), same-origin
-  only, image size cap, input validation before any spend, and refusals surface as
-  "declined", never as a fake answer.
+- **Guard rails in code:** off without a key (the UI says so honestly). Requests must
+  carry this deployment's own Origin (no wildcard). JSON only. Body size is checked
+  before it's read. The whole image is validated: base64, plus a signature matching its
+  declared type. Errors never echo upstream details. Refusals surface as "declined",
+  never as a fake answer. The service worker never caches `/api/`, so turning the key
+  on reaches installed copies of the app.
+- **What the code can't do:** the Origin check stops other websites spending through
+  visitors' browsers, not a script that forges headers. The rate limit and spend cap
+  below are required, not optional.
 - **Before switching on:** add a Vercel Firewall rate-limit rule on `/api/identify`
   (for example 20 requests per IP per hour) and an Anthropic workspace spend limit.
 

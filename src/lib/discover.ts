@@ -56,8 +56,10 @@ export interface DiscoveryResult {
   trails: FoundTrail[];
   /** curated atlas trails in range that no source matched */
   atlas: { trail: Trail; mi: number }[];
-  status: Record<Exclude<SourceKey, "atlas">, { status: SourceResult<unknown>["status"]; count: number; limitedToMi?: number }>;
+  status: Record<Exclude<SourceKey, "atlas">, { status: SourceResult<unknown>["status"] | "pending"; count: number; limitedToMi?: number }>;
   at: number;
+  /** the raw source answers, kept with a cached result so it can be re-ranked for a nearby point */
+  _raw?: { cot: Awaited<ReturnType<typeof fetchCotrex>>; usfs: SourceResult<Segment>; osm: SourceResult<Segment> };
 }
 
 /* ---- names ---- */
@@ -137,7 +139,7 @@ function slug(s: string) { return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").re
 export function buildTrail(piece: Segment[], origin: { lat: number; lon: number }): FoundTrail {
   const s0 = piece[0];
   const paths = piece.flatMap((s) => s.paths);
-  const mappedMi = piece.reduce((sum, s) => sum + (s.lengthMi ?? s.paths.reduce((t, p) => t + pathMi(p), 0)), 0);
+  const mappedMi = piece.reduce((sum, s) => sum + (s.lengthMi && s.lengthMi > 0 ? s.lengthMi : s.paths.reduce((t, p) => t + pathMi(p), 0)), 0);
   const mins = piece.map((s) => s.elevMinM).filter((v): v is number => v != null && v > 0);
   const maxs = piece.map((s) => s.elevMaxM).filter((v): v is number => v != null && v > 0);
   const ids = [...new Set(piece.map((s) => s.sourceId))].sort();
@@ -252,42 +254,86 @@ type Fetch = typeof fetch;
 const memo = new Map<string, DiscoveryResult>();
 const byId = new Map<string, FoundTrail>();
 
+/* a tiny change signal, so a sheet opened from a shared link fills in when the search lands */
+let version = 0;
+const listeners = new Set<() => void>();
+export const foundVersion = () => version;
+export function subscribeFound(l: () => void) { listeners.add(l); return () => { listeners.delete(l); }; }
+const bump = () => { version++; listeners.forEach((l) => l()); };
+
 export const foundById = (id: string) => byId.get(id);
 export const RADIUS_PRESETS = [5, 10, 25, 50] as const;
 
-export async function discover(origin: Origin, radiusMi: number, atlas: Trail[], fetchImpl: Fetch = fetch): Promise<DiscoveryResult> {
-  const key = `${origin.lat.toFixed(3)},${origin.lon.toFixed(3)},${radiusMi}`;
-  const hit = memo.get(key);
-  if (hit && Date.now() - hit.at < 30 * 60_000) return { ...hit, origin };
+/* What leaves the phone: the search point rounded to 0.01° (about 1 km), with
+   the box widened a mile to make up for it. Exact distances are worked out here. */
+export const roundForQuery = (v: number) => Math.round(v * 100) / 100;
+const QUERY_PAD_MI = 1;
 
-  const [cot, usfs, osm] = await Promise.all([
-    fetchCotrex(origin.lat, origin.lon, radiusMi, fetchImpl),
-    fetchUsfs(origin.lat, origin.lon, radiusMi, fetchImpl),
-    fetchOsm(origin.lat, origin.lon, radiusMi, fetchImpl),
-  ]);
-  const built = trailsFromSegments([...cot.items, ...usfs.items, ...osm.items], origin);
+/** A source that hangs shouldn't hold the others hostage. */
+export function withDeadline<T extends { status: string; items: unknown[] }>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([p, new Promise<T>((r) => setTimeout(() => r(fallback), ms))]);
+}
+export const SOURCE_DEADLINE_MS = { arcgis: 45_000, osm: 35_000 };
+
+function assemble(
+  origin: Origin, radiusMi: number, atlas: Trail[],
+  cot: Awaited<ReturnType<typeof fetchCotrex>>, usfs: SourceResult<Segment>, osm: SourceResult<Segment> | null,
+): DiscoveryResult {
+  const built = trailsFromSegments([...cot.items, ...usfs.items, ...(osm?.items ?? [])], origin);
   const merged = attachTrailheads(dedupeTrails(built), cot.trailheads, origin)
     .filter((t) => t.nearest.mi <= radiusMi && t.mappedMi >= 0.05);
   const inRange = atlas.map((trail) => ({ trail, mi: haversineMi(origin.lat, origin.lon, trail.lat, trail.lon) })).filter((a) => a.mi <= radiusMi);
   const { trails, unmatched } = matchAtlas(merged, inRange.map((a) => a.trail));
   trails.sort((a, b) => a.nearest.mi - b.nearest.mi || a.name.localeCompare(b.name));
   trails.forEach((t) => byId.set(t.id, t));
-
-  const result: DiscoveryResult = {
+  bump();
+  /* a source limited to a smaller box can't speak for the whole radius */
+  const lim = (n?: number) => (n != null ? Math.max(0, n - QUERY_PAD_MI) : undefined);
+  return {
     origin, radiusMi, trails,
     atlas: inRange.filter((a) => unmatched.includes(a.trail)).sort((a, b) => a.mi - b.mi),
     status: {
-      cotrex: { status: cot.status, count: cot.items.length, limitedToMi: cot.limitedToMi },
-      usfs: { status: usfs.status, count: usfs.items.length, limitedToMi: usfs.limitedToMi },
-      osm: { status: osm.status, count: osm.items.length, limitedToMi: osm.limitedToMi },
+      cotrex: { status: cot.status, count: cot.items.length, limitedToMi: lim(cot.limitedToMi) },
+      usfs: { status: usfs.status, count: usfs.items.length, limitedToMi: lim(usfs.limitedToMi) },
+      osm: osm ? { status: osm.status, count: osm.items.length, limitedToMi: lim(osm.limitedToMi) } : { status: "pending", count: 0 },
     },
     at: Date.now(),
   };
-  if (Object.values(result.status).some((s) => s.status === "ok")) memo.set(key, result);
+}
+
+/**
+ * Trails around `origin`. COTREX and the Forest Service usually answer in a
+ * second or two; Overpass can take much longer, so `onPartial` gets a first
+ * result without OpenStreetMap, and the promise resolves with everything.
+ */
+export async function discover(
+  origin: Origin, radiusMi: number, atlas: Trail[], fetchImpl: Fetch = fetch,
+  onPartial?: (r: DiscoveryResult) => void,
+): Promise<DiscoveryResult> {
+  const key = `${roundForQuery(origin.lat)},${roundForQuery(origin.lon)},${radiusMi}`;
+  const hit = memo.get(key);
+  if (hit && Date.now() - hit.at < 30 * 60_000) {
+    /* same rounded area: re-rank against this exact point */
+    return assemble(origin, radiusMi, atlas, hit._raw!.cot, hit._raw!.usfs, hit._raw!.osm);
+  }
+  const qLat = roundForQuery(origin.lat), qLon = roundForQuery(origin.lon), qR = radiusMi + QUERY_PAD_MI;
+  const timedOut = { status: "error" as const, items: [] };
+  const fastP = Promise.all([
+    withDeadline(fetchCotrex(qLat, qLon, qR, fetchImpl), SOURCE_DEADLINE_MS.arcgis, { ...timedOut, trailheads: [] }),
+    withDeadline(fetchUsfs(qLat, qLon, qR, fetchImpl), SOURCE_DEADLINE_MS.arcgis, timedOut),
+  ]);
+  const osmP = withDeadline(fetchOsm(qLat, qLon, qR, fetchImpl), SOURCE_DEADLINE_MS.osm, timedOut);
+  let osmDone: SourceResult<Segment> | null = null;
+  osmP.then((o) => { osmDone = o; });
+  const [cot, usfs] = await fastP;
+  if (onPartial && !osmDone) onPartial(assemble(origin, radiusMi, atlas, cot, usfs, null));
+  const osm = await osmP;
+  const result = assemble(origin, radiusMi, atlas, cot, usfs, osm);
+  if (Object.values(result.status).some((s) => s.status === "ok")) memo.set(key, { ...result, _raw: { cot, usfs, osm } });
   return result;
 }
 
-export function _clearDiscovery() { memo.clear(); byId.clear(); }
+export function _clearDiscovery() { memo.clear(); byId.clear(); bump(); }
 
 /* ---- presentation helpers: what each value is, in words ---- */
 export const fmtMi = (mi: number) => (mi < 0.1 ? "< 0.1 mi" : mi < 10 ? `${mi.toFixed(1)} mi` : `${Math.round(mi)} mi`);

@@ -8,6 +8,7 @@ import { todayKey } from "../../src/lib/weather";
 import { _clearDiscovery } from "../../src/lib/discover";
 import { _resetThrottle } from "../../src/lib/geocode";
 import { sourceResponse } from "../fixtures/sources";
+import { getAtlas, reloadAtlas } from "../../src/lib/atlas";
 
 /* These tests drive the whole app through 10-30 real interactions each in
    jsdom. On a busy 2-4 CPU machine a full journey can need more than the
@@ -345,5 +346,58 @@ describe("location-first discovery", () => {
     const saved = JSON.parse(window.localStorage.getItem("co-field-atlas-v1")!);
     expect(saved.found[0]).toMatchObject({ name: "Mesa Trail" });
     expect(saved.saved[0].ref).toMatch(/^found:/);
+  });
+});
+
+describe("review fixes", () => {
+  beforeEach(() => { _clearDiscovery(); _resetThrottle(); });
+
+  it("a slow location fix that lands after the person typed a place doesn't replace it", async () => {
+    stubSources();
+    let late: ((p: unknown) => void) | null = null;
+    Object.defineProperty(navigator, "geolocation", { configurable: true, value: { getCurrentPosition: (ok: (p: unknown) => void) => { late = ok; } } });
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: /use my location/i }));
+    await user.type(screen.getByLabelText(/address or place/i), "Boulder");
+    await user.click(screen.getByRole("button", { name: "Search" }));
+    await user.click(await screen.findByRole("button", { name: /University of Colorado Boulder/ }));
+    act(() => late!({ coords: { latitude: 37.27, longitude: -107.88, accuracy: 10 }, timestamp: Date.now() }));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(JSON.parse(window.localStorage.getItem(START_KEY)!)).toMatchObject({ key: "place", lat: 40.0076 });
+  });
+
+  it("when a source fails and nothing is found, it says so instead of 'no trails here'", async () => {
+    vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("overpass")) return Promise.resolve(new Response("busy", { status: 504 }));
+      if (url.includes("EDW_TrailNFSPublish")) return Promise.resolve(new Response(JSON.stringify(url.includes("returnCountOnly") ? { count: 0 } : { features: [] })));
+      return new Promise(() => {});
+    }));
+    window.localStorage.setItem(START_KEY, JSON.stringify({ key: "place", label: "Moab", lat: 38.57, lon: -109.55 }));
+    render(<App />);
+    const list = await screen.findByRole("region", { name: "Trails near you" });
+    expect(await within(list).findByText(/not every source answered/i)).toBeTruthy();
+    expect(within(list).getByText(/OpenStreetMap didn't respond/)).toBeTruthy();
+    expect(within(list).queryByText(/No mapped trails within/)).toBeNull();
+  });
+
+  it("data saved by the previous build loads untouched: trail log, finds, saved places, last start", () => {
+    const log = { greenmtn: { done: true, rating: 4, notes: "windy" } };
+    const atlas = { schema: 1, activeOutingId: null, outings: [], saved: [{ ref: "color:kenosha-pass", savedAt: "2026-09-01T00:00:00.000Z" }],
+      observations: [{ id: "obs-1", kind: "find", speciesId: "quaking-aspen", candidates: [], idMethod: "guide", placeRef: "trail:greenmtn", outingId: null,
+        observedAt: "2026-09-20T15:00:00.000Z", note: "gold", photoId: null, thumb: null, coords: { lat: 39.69, lon: -105.14, acc: 8 }, source: "app" }] };
+    window.localStorage.setItem(LOG_KEY, JSON.stringify(log));
+    window.localStorage.setItem("co-field-atlas-v1", JSON.stringify(atlas));
+    window.localStorage.setItem(START_KEY, JSON.stringify({ key: "gps", label: "My location", lat: 39.75, lon: -105.05 }));
+    reloadAtlas();
+    render(<App />);
+    expect(JSON.parse(window.localStorage.getItem(LOG_KEY)!)).toEqual(log);
+    expect(screen.getByText("1", { selector: ".tally b" })).toBeTruthy();
+    expect(screen.getByText("Your last location", { selector: ".lp-from b" })).toBeTruthy();
+    const a = getAtlas();
+    expect(a.observations[0]).toMatchObject({ id: "obs-1", speciesId: "quaking-aspen", placeRef: "trail:greenmtn", note: "gold", coords: { lat: 39.69, lon: -105.14, acc: 8 } });
+    expect(a.saved).toEqual(atlas.saved);
+    expect(a.found).toEqual([]);
   });
 });

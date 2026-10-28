@@ -10,6 +10,7 @@ import {
   matchAtlas, nameKey, resample, seasonText, trailsFromSegments,
 } from "../../src/lib/discover";
 import { TRAILS } from "../../src/data/trails";
+import { haversineMi as haversine } from "../../src/lib/geo";
 import { cotrexFeatures, cotrexTrailheads, nominatimResults, overpassElements, sourceResponse, usfsFeatures } from "../fixtures/sources";
 
 const json = (body: unknown, status = 200) => Promise.resolve(new Response(JSON.stringify(body), { status }));
@@ -142,7 +143,8 @@ describe("trail sources: parsing what each service returns", () => {
     });
     const r = await fetchCotrex(40, -105.28, 50, f as unknown as typeof fetch);
     expect(r.status).toBe("ok");
-    expect(r.limitedToMi).toBe(25);
+    expect(r.limitedToMi).toBeLessThan(50);
+    expect(r.limitedToMi).toBeGreaterThan(25); // shrinks in proportion to the overflow, not straight to half
     expect(r.trailheads).toHaveLength(1);
   });
 
@@ -266,5 +268,42 @@ describe("presentation helpers label what a value is", () => {
     const pts = resample([[40, -105], [40, -104.9]], 5);
     expect(pts).toHaveLength(5);
     expect(pts[2][1]).toBeCloseTo(-104.95, 4);
+  });
+});
+
+describe("review fixes: privacy, slow sources, partial results", () => {
+  beforeEach(() => _clearDiscovery());
+  const exact = { lat: 40.012345, lon: -105.276543, label: "You", kind: "gps" as const };
+
+  it("never sends the exact search point to a trail service; distances still use it", async () => {
+    const urls: string[] = [];
+    const f = vi.fn((url: string, init?: RequestInit) => { urls.push(url + (init?.body ? " " + decodeURIComponent(String(init.body)) : "")); return json(sourceResponse(url)); });
+    const r = await discover(exact, 10, [], f as unknown as typeof fetch);
+    expect(urls.length).toBeGreaterThan(3);
+    for (const u of urls) { expect(u).not.toMatch(/40\.0123|105\.2765/); }
+    const mesa = r.trails.find((t) => t.name === "Mesa Trail")!;
+    expect(mesa.nearest.mi).toBeCloseTo(haversine(exact.lat, exact.lon, mesa.nearest.lat, mesa.nearest.lon), 6);
+  });
+
+  it("shows COTREX and Forest Service results without waiting on a slow OpenStreetMap", async () => {
+    let releaseOsm: (v: Response) => void = () => {};
+    const f = vi.fn((url: string) => url.includes("overpass") ? new Promise<Response>((r) => { releaseOsm = r; }) : json(sourceResponse(url)));
+    const partials: string[] = [];
+    const done = discover({ ...origin }, 10, [], f as unknown as typeof fetch, (p) => partials.push(p.status.osm.status));
+    await vi.waitFor(() => expect(partials).toEqual(["pending"]));
+    releaseOsm(new Response(JSON.stringify({ elements: overpassElements() })));
+    const full = await done;
+    expect(full.status.osm.status).toBe("ok");
+    expect(full.trails.some((t) => t.name === "Skunk Canyon Trail")).toBe(true);
+  });
+
+  it("a source that never answers is reported as failed after its deadline instead of hanging the search", async () => {
+    vi.useFakeTimers();
+    const f = vi.fn((url: string) => url.includes("apps.fs.usda.gov") ? new Promise<Response>(() => {}) : json(sourceResponse(url)));
+    const p = discover({ ...origin }, 10, [], f as unknown as typeof fetch);
+    await vi.advanceTimersByTimeAsync(60_000);
+    const r = await p;
+    expect(r.status.usfs.status).toBe("error");
+    expect(r.status.cotrex.status).toBe("ok");
   });
 });

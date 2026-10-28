@@ -113,13 +113,11 @@ export function WildID({ group, at, near, onBack, onDone }: Props) {
   const answer = outcome?.ok ? outcome.answer : null;
 
   /* sensitivity comes from iNaturalist's taxon record; if it can't be checked, location isn't kept */
-  const pick = async (t: { id: number; name: string; common: string | null; iconic: string | null; sensitive?: boolean; photo: WildSpecies["photo"] }, how: Choice["how"], likelihood?: Likelihood) => {
-    let sensitive = t.sensitive, unknown = false;
-    if (sensitive === undefined) {
-      const full = await fetchWildTaxon(t.id);
-      unknown = !full;
-      sensitive = full ? full.sensitive : true;
-    }
+  const pick = async (t: { id: number; name: string; common: string | null; iconic: string | null; photo: WildSpecies["photo"] }, how: Choice["how"], likelihood?: Likelihood) => {
+    /* always the full record: search results carry no conservation statuses */
+    const full = await fetchWildTaxon(t.id);
+    const unknown = !full;
+    const sensitive = full ? full.sensitive : true;
     setChoice({ taxon: { id: t.id, name: t.name, common: t.common, iconic: t.iconic, sensitive }, photo: t.photo, how, likelihood, sensitivityUnknown: unknown });
     setStep("save");
   };
@@ -253,7 +251,7 @@ function Candidate({ r, records, hasNearby, whereLabel, onPick }: { r: Resolved;
         <ul className="ticks match-marks">{r.c.visible_features.map((x) => <li key={x}>{x}</li>)}</ul>
       </>}
       {r.c.check_next && <p className="match-check"><b>Check:</b> {r.c.check_next}</p>}
-      {r.taxon?.sensitive && <p className="sensitive-note">Sensitive or at-risk species. Its location won't be saved.</p>}
+      {r.taxon?.sensitive && <p className="sensitive-note">At risk here or location-protected on iNaturalist. Its location won't be saved.</p>}
       {!r.taxon && <p className="match-warn">Couldn't match this name to an iNaturalist species, so it can't be saved under this name.</p>}
       {r.taxon && (
         <div className="match-actions">

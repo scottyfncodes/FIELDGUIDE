@@ -109,7 +109,11 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
     if (!origin) return;
     const id = ++runId.current;
     setDisc({ state: "loading" }); setShown(PAGE); setDsel(null);
-    discover(origin, radiusMi, TRAILS)
+    const usable = (r: DiscoveryResult) => Object.values(r.status).some((x) => x.status === "ok") || r.atlas.length > 0;
+    /* first answer without OpenStreetMap (slow), then the full one */
+    discover(origin, radiusMi, TRAILS, fetch, (partial) => {
+      if (id === runId.current && usable(partial)) setDisc({ state: "ok", result: partial });
+    })
       .then((result) => {
         if (id !== runId.current) return;
         const anyOk = Object.values(result.status).some((s) => s.status === "ok");
@@ -285,6 +289,7 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
       const name = SOURCE_META[k].label;
       if (s.status === "skipped") return null;
       if (s.status === "error") return `${name}: didn't answer`;
+      if (s.status === "pending") return `${name}: still loading`;
       return `${name}: ${s.count} segment${s.count === 1 ? "" : "s"}${s.limitedToMi ? ` (nearest ${s.limitedToMi} mi; dense area)` : ""}`;
     }).filter(Boolean);
     return parts.join(" · ");
@@ -386,8 +391,16 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
                   <p className="empty-title">No trails match these filters.</p>
                   <button type="button" className="clear-btn" onClick={() => { setDq(""); setLen("any"); setDogs(false); }}>Clear filters</button>
                 </> : <>
-                  <p className="empty-title">No mapped trails within {radiusMi} miles.</p>
-                  <p>The sources may not cover this area well yet. Try a wider radius or a town nearby.</p>
+                  {Object.values(found.status).some((x) => x.status === "pending") ? <>
+                    <p className="empty-title">Nothing from the fast sources yet. Still waiting on OpenStreetMap…</p>
+                  </> : Object.values(found.status).some((x) => x.status === "error") ? <>
+                    <p className="empty-title">No trails found, but not every source answered.</p>
+                    <p>{(Object.keys(found.status) as (keyof typeof found.status)[]).filter((k) => found.status[k].status === "error").map((k) => SOURCE_META[k].label).join(" and ")} didn't respond, so this area may have trails we couldn't see.</p>
+                    <button type="button" className="pa-btn pa-primary" onClick={run}>Try again</button>
+                  </> : <>
+                    <p className="empty-title">No mapped trails within {radiusMi} miles.</p>
+                    <p>The sources may not cover this area well yet. Try a wider radius or a town nearby.</p>
+                  </>}
                   {radiusMi < 50 && <button type="button" className="pa-btn pa-primary" onClick={() => onRadius(radiusMi < 25 ? 25 : 50)}>Search {radiusMi < 25 ? 25 : 50} miles</button>}
                 </>}
               </div>

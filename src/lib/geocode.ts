@@ -159,11 +159,11 @@ export async function geocode(query: string, opts: { fetchImpl?: Fetch; online?:
   return out.length ? { status: "ok", results: out } : { status: "empty" };
 }
 
-/** "near Boulder, Colorado" for a GPS fix; null when the lookup fails (it's only a label). */
+/** "near Boulder, Colorado" for a GPS fix, asked with the point rounded to ~1 km (town level is all it needs); null when the lookup fails. */
 export async function placeNameNear(lat: number, lon: number, fetchImpl: Fetch = fetch): Promise<string | null> {
   try {
     await throttle();
-    const j = await getJson(`${NOMINATIM}/reverse?lat=${lat.toFixed(4)}&lon=${lon.toFixed(4)}&format=jsonv2&zoom=10&accept-language=en`, fetchImpl);
+    const j = await getJson(`${NOMINATIM}/reverse?lat=${lat.toFixed(2)}&lon=${lon.toFixed(2)}&format=jsonv2&zoom=10&accept-language=en`, fetchImpl);
     const a = j?.address ?? {};
     const town = a.city || a.town || a.village || a.hamlet || a.county;
     return town ? [town, a.state].filter(Boolean).join(", ") : null;

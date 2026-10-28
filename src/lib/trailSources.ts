@@ -110,7 +110,9 @@ async function getJson(url: string, fetchImpl: Fetch, init?: RequestInit, ms = 2
 
 /* ---- ArcGIS REST: envelope queries, counted first, then paged ---- */
 const PAGE = 1000;
-export const MAX_PER_SOURCE = 3000;
+/* checked live: a 50 mi search around Denver holds about 9,100 COTREX segments,
+   so the cap trades payload (simplified geometry, ~1 MB per 1,000) against reach */
+export const MAX_PER_SOURCE = 6000;
 
 function envelope(b: Bbox) {
   return `geometry=${[b.west, b.south, b.east, b.north].map((n) => n.toFixed(5)).join(",")}` +
@@ -258,13 +260,14 @@ async function denseSafe(
   layerUrl: string, where: string, lat: number, lon: number, radiusMi: number, fetchImpl: Fetch,
 ): Promise<{ box: Bbox; limitedToMi?: number }> {
   let r = radiusMi;
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 8; i++) {
     const box = bboxAround(lat, lon, r);
     const n = await arcgisCount(layerUrl, where, box, fetchImpl);
-    if (n <= MAX_PER_SOURCE) return { box, limitedToMi: r < radiusMi ? r : undefined };
-    r = r / 2;
+    if (n <= MAX_PER_SOURCE) return { box, limitedToMi: r < radiusMi ? Math.round(r) : undefined };
+    /* shrink in proportion to how far over we are (area scales with r²), never by more than half */
+    r = r * Math.max(0.5, Math.min(0.9, Math.sqrt(MAX_PER_SOURCE / n) * 0.95));
   }
-  return { box: bboxAround(lat, lon, r), limitedToMi: r };
+  return { box: bboxAround(lat, lon, r), limitedToMi: Math.round(r) };
 }
 
 const simplifyFor = (radiusMi: number) => (radiusMi > 20 ? 0.0004 : radiusMi > 8 ? 0.0002 : 0.0001);

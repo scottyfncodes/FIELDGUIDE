@@ -103,6 +103,7 @@ describe("wildlife from iNaturalist", () => {
     expect(url).toMatch(/quality_grade=research/);
     expect(url).toMatch(/iconic_taxa=Insecta,Arachnida/);
     expect(url).toMatch(/month=12,1,2/);
+    expect(url).toContain("lat=40.12&lng=-105.46"); // rounded to ~1 km before it leaves the phone
     expect(r![0]).toMatchObject({ taxonId: 14823, count: 12, iconic: "Aves" });
   });
 
@@ -111,6 +112,23 @@ describe("wildlife from iNaturalist", () => {
     expect(parseWildTaxon({ id: 2, name: "C d", conservation_statuses: [{ status: "EN", status_name: "endangered", authority: "IUCN Red List", iucn: 50 }] })!.sensitive).toBe(true);
     expect(parseWildTaxon({ id: 3, name: "E f", conservation_statuses: [{ status: "LC", status_name: "least concern", iucn: 10 }] })!.sensitive).toBe(false);
     expect(parseWildTaxon({ name: "no id" })).toBeNull();
+  });
+
+  /* statuses as iNaturalist returned them when checked live */
+  const st = (status: string, place: string | null, iucn: number, geoprivacy: string | null = null) =>
+    ({ authority: "NatureServe", status, place: place ? { display_name: place } : null, iucn, geoprivacy });
+  it("counts only statuses for Colorado, the US or worldwide: rare elsewhere isn't at risk here", () => {
+    const lynx = parseWildTaxon({ id: 41974, name: "Lynx canadensis", conservation_statuses: [st("S4", "Alaska, US", 20), st("S1", "Colorado, US", 50), st("SX", "Indiana, US", 70)] })!;
+    const bear = parseWildTaxon({ id: 41638, name: "Ursus americanus", conservation_statuses: [st("S1", "North Dakota, US", 50), st("S3S4", "Oklahoma, US", 30)] })!;
+    const bluebird = parseWildTaxon({ id: 12936, name: "Sialia currucoides", conservation_statuses: [{ authority: "IUCN Red List", status: "LC", place: null, iucn: 10 }, st("S2B", "Yukon, CA", 40)] })!;
+    expect(lynx.sensitive).toBe(true);
+    expect(bear.sensitive).toBe(false);
+    expect(bluebird.sensitive).toBe(false);
+    expect(lynx.statuses[0].place).toBe("Colorado, US"); // the status that applies here is listed first
+  });
+  it("a species iNaturalist hides the location of in Colorado is sensitive even if it isn't ranked at risk", () => {
+    expect(parseWildTaxon({ id: 9, name: "G h", conservation_statuses: [st("S3", "Colorado, US", 30, "obscured")] })!.sensitive).toBe(true);
+    expect(parseWildTaxon({ id: 9, name: "G h", conservation_statuses: [st("S4", "Wyoming, US", 20, "obscured")] })!.sensitive).toBe(false);
   });
 
   it("resolves a model's name to a taxon only on an exact scientific-name match", async () => {

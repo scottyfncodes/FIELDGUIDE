@@ -29,13 +29,17 @@ export function LocationPanel({ origin, radiusMi, onOrigin, onRadius, searching 
   const [msg, setMsg] = useState<{ text: string; tone: "warn" | "info" } | null>(null);
   const [choices, setChoices] = useState<GeoResult[] | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  /* bumps whenever a new search point is chosen, so a late GPS fix or town-name lookup can't overwrite a newer pick */
+  const seq = useRef(0);
 
   useEffect(() => { if (!origin) setEditing(true); }, [origin]);
 
   const useMine = async () => {
+    const mine = ++seq.current;
     setLocBusy(true); setMsg(null); setChoices(null);
     const r = await locate();
     setLocBusy(false);
+    if (mine !== seq.current) return; // the person picked a place while we waited
     if (!r.ok) {
       setMsg({ text: LOCATE_MESSAGE[r.reason], tone: "warn" });
       setEditing(true);
@@ -47,7 +51,7 @@ export function LocationPanel({ origin, radiusMi, onOrigin, onRadius, searching 
     const o: Origin = { kind: "gps", lat: r.lat, lon: r.lon, acc: r.acc, label: "Your location" };
     onOrigin(o);
     setEditing(false);
-    placeNameNear(r.lat, r.lon).then((name) => { if (name) onOrigin({ ...o, label: `Near ${name}` }); });
+    placeNameNear(r.lat, r.lon).then((name) => { if (name && mine === seq.current) onOrigin({ ...o, label: `Near ${name}` }); });
   };
 
   const search = async (e?: React.FormEvent) => {
@@ -63,6 +67,8 @@ export function LocationPanel({ origin, radiusMi, onOrigin, onRadius, searching 
   };
 
   const pick = (r: GeoResult) => {
+    seq.current++;
+    setLocBusy(false);
     setChoices(null); setMsg(null); setEditing(false);
     onOrigin({ kind: "place", lat: r.lat, lon: r.lon, label: [r.label, r.detail.split(",")[0]].filter(Boolean).join(", ") });
   };
@@ -91,7 +97,7 @@ export function LocationPanel({ origin, radiusMi, onOrigin, onRadius, searching 
             </svg>
             <span>{locBusy ? "Finding you…" : "Use my location"}</span>
           </button>
-          <p className="lp-why">Your phone will ask first. The location is used to measure distances to trails and is kept only on this device.</p>
+          <p className="lp-why">Your phone will ask first. To find trails, the public map services get your position rounded to about 1 km; the exact point is used only on this phone, to measure distances, and saved only here.</p>
           <div className="lp-or" aria-hidden="true"><span>or</span></div>
           <form className="lp-form" onSubmit={search} role="search">
             <label htmlFor="lp-q" className="sr-only">Address or place</label>

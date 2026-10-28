@@ -149,7 +149,7 @@ export function TaxonPage({ id, near, onClose }: { id: number; near: { lat: numb
           <i className="sp-sci">{t.value.name}</i>
         </header>
         {t.value.sensitive && (
-          <p className="sensitive-note">Listed as sensitive or at risk. Keep sightings to yourself, give it extra room, and never share a precise location. This app won't save coordinates for it.</p>
+          <p className="sensitive-note">At risk in Colorado, the US or worldwide, or iNaturalist hides its locations. Keep sightings to yourself, give it extra room, and never share a precise location. This app won't save coordinates for it.</p>
         )}
         {t.value.summary && (
           <section className="det-sec">
