@@ -371,7 +371,7 @@ describe("review fixes", () => {
     vi.stubGlobal("fetch", vi.fn((input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("overpass")) return Promise.resolve(new Response("busy", { status: 504 }));
-      if (url.includes("EDW_TrailNFSPublish")) return Promise.resolve(new Response(JSON.stringify(url.includes("returnCountOnly") ? { count: 0 } : { features: [] })));
+      if (/EDW_TrailNFSPublish|mapservices\.nps\.gov|gis\.blm\.gov/.test(url)) return Promise.resolve(new Response(JSON.stringify(url.includes("returnCountOnly") ? { count: 0 } : { features: [] })));
       return new Promise(() => {});
     }));
     window.localStorage.setItem(START_KEY, JSON.stringify({ key: "place", label: "Moab", lat: 38.57, lon: -109.55 }));

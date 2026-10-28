@@ -22,6 +22,8 @@ import { useAtlas } from "../lib/atlas";
 import { discover, fmtMi, sourceList } from "../lib/discover";
 import type { DiscoveryResult, FoundTrail, Origin } from "../lib/discover";
 import { SOURCE_META } from "../lib/trailSources";
+
+const andList = (xs: string[]) => xs.length < 3 ? xs.join(" and ") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`;
 import { AtlasMap } from "../components/AtlasMap";
 import type { AtlasMapHandle, MapPoint } from "../components/AtlasMap";
 import { DiscoveryMap, RouteGlyph } from "../components/DiscoveryMap";
@@ -349,7 +351,7 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
           {disc.state === "loading" && (
             <div className="loading-card" role="status">
               <span className="lc-dots" aria-hidden="true"><i /><i /><i /></span>
-              <p>Asking Colorado Trail Explorer, the Forest Service and OpenStreetMap for trails within {radiusMi} miles…</p>
+              <p>Asking Colorado Trail Explorer, the Park Service, the Forest Service, BLM and OpenStreetMap for trails within {radiusMi} miles…</p>
             </div>
           )}
           {disc.state === "error" && (
@@ -395,7 +397,7 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
                     <p className="empty-title">Nothing from the fast sources yet. Still waiting on OpenStreetMap…</p>
                   </> : Object.values(found.status).some((x) => x.status === "error") ? <>
                     <p className="empty-title">No trails found, but not every source answered.</p>
-                    <p>{(Object.keys(found.status) as (keyof typeof found.status)[]).filter((k) => found.status[k].status === "error").map((k) => SOURCE_META[k].label).join(" and ")} didn't respond, so this area may have trails we couldn't see.</p>
+                    <p>{andList((Object.keys(found.status) as (keyof typeof found.status)[]).filter((k) => found.status[k].status === "error").map((k) => SOURCE_META[k].label))} didn't respond, so this area may have trails we couldn't see.</p>
                     <button type="button" className="pa-btn pa-primary" onClick={run}>Try again</button>
                   </> : <>
                     <p className="empty-title">No mapped trails within {radiusMi} miles.</p>

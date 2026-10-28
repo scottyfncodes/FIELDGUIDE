@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LOCATE_MESSAGE, ROUGH_ACCURACY_M, locate } from "../../src/lib/locate";
 import { _resetThrottle, dedupeResults, geocode, parseNominatim, parsePhoton } from "../../src/lib/geocode";
 import {
-  COLORADO, MAX_PER_SOURCE, arcgisQuery, bboxAround, fetchCotrex, fetchOsm, fetchUsfs, overpassQuery, parseCotrex, parseOverpass, parseUsfs,
+  COLORADO, MAX_PER_SOURCE, arcgisQuery, bboxAround, fetchCotrex, fetchOsm, fetchUsfs, overpassQuery, parseBlm, parseCotrex, parseNps, parseOverpass, parseUsfs,
 } from "../../src/lib/trailSources";
 import type { Segment } from "../../src/lib/trailSources";
 import {
@@ -11,7 +11,7 @@ import {
 } from "../../src/lib/discover";
 import { TRAILS } from "../../src/data/trails";
 import { haversineMi as haversine } from "../../src/lib/geo";
-import { cotrexFeatures, cotrexTrailheads, nominatimResults, overpassElements, sourceResponse, usfsFeatures } from "../fixtures/sources";
+import { MOAB, blmFeatures, cotrexFeatures, cotrexTrailheads, nominatimResults, npsFeatures, overpassElements, sourceResponse, usfsFeatures } from "../fixtures/sources";
 
 const json = (body: unknown, status = 200) => Promise.resolve(new Response(JSON.stringify(body), { status }));
 const origin = { lat: 40.0, lon: -105.28, label: "Boulder", kind: "place" as const };
@@ -229,7 +229,9 @@ describe("discovery: segments become trails, deduped and ranked", () => {
     const r = await discover(origin, 10, TRAILS, f as unknown as typeof fetch);
     expect(r.status).toEqual({
       cotrex: { status: "ok", count: 26, limitedToMi: undefined },
+      nps: { status: "ok", count: 0, limitedToMi: undefined },
       usfs: { status: "ok", count: 1, limitedToMi: undefined },
+      blm: { status: "ok", count: 0, limitedToMi: undefined },
       osm: { status: "ok", count: 2, limitedToMi: undefined },
     });
     expect(r.trails.every((t) => t.nearest.mi <= 10)).toBe(true);
@@ -245,7 +247,7 @@ describe("discovery: segments become trails, deduped and ranked", () => {
     const f = vi.fn(() => Promise.reject(new TypeError("offline")));
     const r = await discover({ ...origin, lat: 38.5 }, 5, [], f as unknown as typeof fetch);
     expect(r.trails).toEqual([]);
-    expect(Object.values(r.status).map((s) => s.status)).toEqual(["error", "error", "error"]);
+    expect(Object.values(r.status).map((s) => s.status)).toEqual(["error", "error", "error", "error", "error"]);
   });
 });
 
@@ -305,5 +307,36 @@ describe("review fixes: privacy, slow sources, partial results", () => {
     const r = await p;
     expect(r.status.usfs.status).toBe("error");
     expect(r.status.cotrex.status).toBe("ok");
+  });
+});
+
+describe("federal lands: National Park Service and BLM trails", () => {
+  it("parses NPS trails, keeping 'Unknown' class unrated", () => {
+    const [park, spur] = parseNps(npsFeatures());
+    expect(park).toMatchObject({ source: "nps", name: "Park Avenue Trail", manager: "Arches National Park", trailClass: "2", trailClassLabel: "Class 2: Minor Development", useText: "Hiker/Pedestrian" });
+    expect(spur.trailClass).toBeNull();
+    expect(spur.trailClassLabel).toBeNull();
+    expect(difficultyText({ trailClass: "2", trailClassLabel: park.trailClassLabel } as never)).toMatch(/class 2 of 5/i);
+  });
+  it("parses BLM routes: readable name, no 'None' restriction shown", () => {
+    const [b] = parseBlm(blmFeatures());
+    expect(b).toMatchObject({ source: "blm", name: "Moab Brand Trails", manager: "Bureau of Land Management", lengthMi: 1.2, access: null });
+  });
+  it("a search near Moab finds trails from NPS and BLM where COTREX and USFS have none", async () => {
+    _clearDiscovery();
+    const f = vi.fn((url: string) => json(sourceResponse(url, undefined, { federal: true })));
+    const r = await discover({ ...MOAB, label: "Moab", kind: "place" }, 10, [], f as unknown as typeof fetch);
+    expect(r.status.cotrex.status).toBe("skipped");
+    expect(r.status.nps).toMatchObject({ status: "ok", count: 2 });
+    expect(r.status.blm).toMatchObject({ status: "ok", count: 1 });
+    const names = r.trails.map((t) => t.name);
+    expect(names).toEqual(expect.arrayContaining(["Park Avenue Trail", "Moab Brand Trails"]));
+    expect(r.trails.find((t) => t.name === "Park Avenue Trail")!.primary).toBe("nps");
+  });
+  it("one named trail across two managers stays one trail", () => {
+    const o = { lat: 40, lon: -105.28 };
+    const a = { source: "usfs" as const, sourceId: "a", name: "Twin Sisters", manager: "Roosevelt NF", paths: [[[40, -105], [40.001, -105.001]]], lengthMi: 0.1 };
+    const b = { ...a, sourceId: "b", manager: "Rocky Mountain NP", paths: [[[40.001, -105.001], [40.002, -105.002]]] };
+    expect(trailsFromSegments([a, b] as Segment[], o)).toHaveLength(1);
   });
 });

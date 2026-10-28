@@ -1,12 +1,12 @@
 import type { Trail } from "../data/types";
 import { haversineMi } from "./geo";
-import { SOURCE_META, USFS_TRAIL_CLASS, fetchCotrex, fetchOsm, fetchUsfs } from "./trailSources";
+import { SOURCE_META, USFS_TRAIL_CLASS, fetchBlm, fetchCotrex, fetchNps, fetchOsm, fetchUsfs } from "./trailSources";
 import type { LatLon, Segment, SourceKey, SourceResult, Trailhead } from "./trailSources";
 
 /* ---------- DISCOVERY: segments in, trails out ----------
    Sources map trails as many short segments. This turns them into one card
    per trail, honestly:
-     1. group a source's segments by name + manager, then split each group
+     1. group a source's segments by name, then split each group
         into pieces that actually connect (two "Mesa Trail"s 40 miles apart
         stay two trails);
      2. dedupe across sources: same normalized name AND geometry within a
@@ -35,6 +35,10 @@ export interface FoundTrail {
   uses: { hike: string | null; bike: string | null; horse: string | null; dogs: string | null };
   access: string | null;
   trailClass: string | null;
+  /** the source's own trail-class wording, when it has one (NPS) */
+  trailClassLabel: string | null;
+  /** who it's managed for, in the source's words */
+  useText: string | null;
   grade: string | null;
   accessibility: string | null;
   hikerSeason: string | null;
@@ -59,7 +63,7 @@ export interface DiscoveryResult {
   status: Record<Exclude<SourceKey, "atlas">, { status: SourceResult<unknown>["status"] | "pending"; count: number; limitedToMi?: number }>;
   at: number;
   /** the raw source answers, kept with a cached result so it can be re-ranked for a nearby point */
-  _raw?: { cot: Awaited<ReturnType<typeof fetchCotrex>>; usfs: SourceResult<Segment>; osm: SourceResult<Segment> };
+  _raw?: { cot: Awaited<ReturnType<typeof fetchCotrex>>; fed: Federal; osm: SourceResult<Segment> };
 }
 
 /* ---- names ---- */
@@ -135,6 +139,16 @@ const mode = (xs: (string | null | undefined)[]) => {
 
 function slug(s: string) { return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40); }
 
+/* A trail that crosses land (Forest Service into a national park, say) has
+   more than one manager: name them all, biggest share first. */
+function managersOf(piece: Segment[]): string | null {
+  const share = new Map<string, number>();
+  piece.forEach((s) => { if (s.manager) share.set(s.manager, (share.get(s.manager) ?? 0) + (s.lengthMi ?? 0.1)); });
+  const names = [...share.entries()].sort((a, b) => b[1] - a[1]).map(([m]) => m);
+  if (!names.length) return null;
+  return names.length <= 2 ? names.join(" and ") : `${names[0]}, ${names[1]} and ${names.length - 2} more`;
+}
+
 /** One source's connected piece of one named trail → a card. */
 export function buildTrail(piece: Segment[], origin: { lat: number; lon: number }): FoundTrail {
   const s0 = piece[0];
@@ -147,7 +161,7 @@ export function buildTrail(piece: Segment[], origin: { lat: number; lon: number 
   return {
     id: `${s0.source}:${slug(s0.name)}:${ids[0]}`,
     name: s0.name,
-    manager: mode(piece.map((s) => s.manager)),
+    manager: managersOf(piece),
     sources: ids.map((id) => ({ source: s0.source, id })),
     primary: s0.source,
     paths,
@@ -161,6 +175,8 @@ export function buildTrail(piece: Segment[], origin: { lat: number; lon: number 
     },
     access: mode(piece.map((s) => s.access)),
     trailClass: mode(piece.map((s) => s.trailClass)),
+    trailClassLabel: mode(piece.map((s) => s.trailClassLabel)),
+    useText: mode(piece.map((s) => s.useText)),
     grade: mode(piece.map((s) => s.grade)),
     accessibility: mode(piece.map((s) => s.accessibility)),
     hikerSeason: mode(piece.map((s) => s.hikerSeason)),
@@ -176,14 +192,15 @@ export function buildTrail(piece: Segment[], origin: { lat: number; lon: number 
 export function trailsFromSegments(segs: Segment[], origin: { lat: number; lon: number }): FoundTrail[] {
   const groups = new Map<string, Segment[]>();
   for (const s of segs) {
-    const k = `${s.source}|${nameKey(s.name)}|${(s.manager ?? "").toLowerCase()}`;
+    const k = `${s.source}|${nameKey(s.name)}`;
     if (!nameKey(s.name)) continue;
     groups.set(k, [...(groups.get(k) ?? []), s]);
   }
   return [...groups.values()].flatMap((g) => connectedPieces(g).map((piece) => buildTrail(piece, origin)));
 }
 
-const RANK: Record<Exclude<SourceKey, "atlas">, number> = { cotrex: 0, usfs: 1, osm: 2 };
+/* who leads when sources overlap: the state's curated map, then the land managers, then OSM */
+const RANK: Record<Exclude<SourceKey, "atlas">, number> = { cotrex: 0, nps: 1, usfs: 2, blm: 3, osm: 4 };
 
 /** Merges `b` into `a` (a leads): fill a's gaps, keep every source id. */
 function absorb(a: FoundTrail, b: FoundTrail): FoundTrail {
@@ -192,7 +209,7 @@ function absorb(a: FoundTrail, b: FoundTrail): FoundTrail {
     ...a,
     sources: [...a.sources, ...b.sources.filter((s) => !a.sources.some((x) => x.source === s.source && x.id === s.id))],
     manager: keep("manager"), surface: keep("surface"), access: keep("access"),
-    trailClass: keep("trailClass"), grade: keep("grade"), accessibility: keep("accessibility"),
+    trailClass: keep("trailClass"), trailClassLabel: a.trailClass ? a.trailClassLabel : b.trailClassLabel, useText: keep("useText"), grade: keep("grade"), accessibility: keep("accessibility"),
     hikerSeason: keep("hikerSeason"), sacScale: keep("sacScale"), trailNo: keep("trailNo"),
     elevMinFt: keep("elevMinFt"), elevMaxFt: keep("elevMaxFt"),
     uses: {
@@ -275,11 +292,13 @@ export function withDeadline<T extends { status: string; items: unknown[] }>(p: 
 }
 export const SOURCE_DEADLINE_MS = { arcgis: 45_000, osm: 35_000 };
 
+interface Federal { nps: SourceResult<Segment>; usfs: SourceResult<Segment>; blm: SourceResult<Segment> }
+
 function assemble(
   origin: Origin, radiusMi: number, atlas: Trail[],
-  cot: Awaited<ReturnType<typeof fetchCotrex>>, usfs: SourceResult<Segment>, osm: SourceResult<Segment> | null,
+  cot: Awaited<ReturnType<typeof fetchCotrex>>, fed: Federal, osm: SourceResult<Segment> | null,
 ): DiscoveryResult {
-  const built = trailsFromSegments([...cot.items, ...usfs.items, ...(osm?.items ?? [])], origin);
+  const built = trailsFromSegments([...cot.items, ...fed.nps.items, ...fed.usfs.items, ...fed.blm.items, ...(osm?.items ?? [])], origin);
   const merged = attachTrailheads(dedupeTrails(built), cot.trailheads, origin)
     .filter((t) => t.nearest.mi <= radiusMi && t.mappedMi >= 0.05);
   const inRange = atlas.map((trail) => ({ trail, mi: haversineMi(origin.lat, origin.lon, trail.lat, trail.lon) })).filter((a) => a.mi <= radiusMi);
@@ -294,7 +313,9 @@ function assemble(
     atlas: inRange.filter((a) => unmatched.includes(a.trail)).sort((a, b) => a.mi - b.mi),
     status: {
       cotrex: { status: cot.status, count: cot.items.length, limitedToMi: lim(cot.limitedToMi) },
-      usfs: { status: usfs.status, count: usfs.items.length, limitedToMi: lim(usfs.limitedToMi) },
+      nps: { status: fed.nps.status, count: fed.nps.items.length, limitedToMi: lim(fed.nps.limitedToMi) },
+      usfs: { status: fed.usfs.status, count: fed.usfs.items.length, limitedToMi: lim(fed.usfs.limitedToMi) },
+      blm: { status: fed.blm.status, count: fed.blm.items.length, limitedToMi: lim(fed.blm.limitedToMi) },
       osm: osm ? { status: osm.status, count: osm.items.length, limitedToMi: lim(osm.limitedToMi) } : { status: "pending", count: 0 },
     },
     at: Date.now(),
@@ -314,22 +335,25 @@ export async function discover(
   const hit = memo.get(key);
   if (hit && Date.now() - hit.at < 30 * 60_000) {
     /* same rounded area: re-rank against this exact point */
-    return assemble(origin, radiusMi, atlas, hit._raw!.cot, hit._raw!.usfs, hit._raw!.osm);
+    return assemble(origin, radiusMi, atlas, hit._raw!.cot, hit._raw!.fed, hit._raw!.osm);
   }
   const qLat = roundForQuery(origin.lat), qLon = roundForQuery(origin.lon), qR = radiusMi + QUERY_PAD_MI;
   const timedOut = { status: "error" as const, items: [] };
   const fastP = Promise.all([
     withDeadline(fetchCotrex(qLat, qLon, qR, fetchImpl), SOURCE_DEADLINE_MS.arcgis, { ...timedOut, trailheads: [] }),
+    withDeadline(fetchNps(qLat, qLon, qR, fetchImpl), SOURCE_DEADLINE_MS.arcgis, timedOut),
     withDeadline(fetchUsfs(qLat, qLon, qR, fetchImpl), SOURCE_DEADLINE_MS.arcgis, timedOut),
+    withDeadline(fetchBlm(qLat, qLon, qR, fetchImpl), SOURCE_DEADLINE_MS.arcgis, timedOut),
   ]);
   const osmP = withDeadline(fetchOsm(qLat, qLon, qR, fetchImpl), SOURCE_DEADLINE_MS.osm, timedOut);
   let osmDone: SourceResult<Segment> | null = null;
   osmP.then((o) => { osmDone = o; });
-  const [cot, usfs] = await fastP;
-  if (onPartial && !osmDone) onPartial(assemble(origin, radiusMi, atlas, cot, usfs, null));
+  const [cot, nps, usfs, blm] = await fastP;
+  const fed: Federal = { nps, usfs, blm };
+  if (onPartial && !osmDone) onPartial(assemble(origin, radiusMi, atlas, cot, fed, null));
   const osm = await osmP;
-  const result = assemble(origin, radiusMi, atlas, cot, usfs, osm);
-  if (Object.values(result.status).some((s) => s.status === "ok")) memo.set(key, { ...result, _raw: { cot, usfs, osm } });
+  const result = assemble(origin, radiusMi, atlas, cot, fed, osm);
+  if (Object.values(result.status).some((s) => s.status === "ok")) memo.set(key, { ...result, _raw: { cot, fed, osm } });
   return result;
 }
 
@@ -338,7 +362,11 @@ export function _clearDiscovery() { memo.clear(); byId.clear(); bump(); }
 /* ---- presentation helpers: what each value is, in words ---- */
 export const fmtMi = (mi: number) => (mi < 0.1 ? "< 0.1 mi" : mi < 10 ? `${mi.toFixed(1)} mi` : `${Math.round(mi)} mi`);
 
-export function difficultyText(t: Pick<FoundTrail, "trailClass" | "sacScale">): string | null {
+export function difficultyText(t: Pick<FoundTrail, "trailClass" | "sacScale"> & { trailClassLabel?: string | null }): string | null {
+  if (t.trailClassLabel) {
+    const m = t.trailClassLabel.match(/^Class\s*([1-5]):\s*(.+)$/i);
+    return m ? `Trail class ${m[1]} of 5: ${m[2].toLowerCase()}` : t.trailClassLabel;
+  }
   if (t.trailClass && USFS_TRAIL_CLASS[t.trailClass]) return USFS_TRAIL_CLASS[t.trailClass];
   const sac: Record<string, string> = {
     hiking: "SAC T1: hiking", mountain_hiking: "SAC T2: mountain hiking", demanding_mountain_hiking: "SAC T3: demanding mountain hiking",

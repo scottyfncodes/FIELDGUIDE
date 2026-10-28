@@ -18,7 +18,7 @@ import { Tag, fmtDuration } from "./atlasBits";
    source), computed here from the geometry (tagged computed), or an
    estimate (tagged estimate). What no source gave is shown as unknown. */
 
-type Attr = "surface" | "hike" | "bike" | "horse" | "dogs" | "access" | "trailClass" | "grade" | "accessibility" | "hikerSeason" | "sacScale" | "trailNo";
+type Attr = "surface" | "hike" | "bike" | "horse" | "dogs" | "access" | "trailClass" | "trailClassLabel" | "useText" | "grade" | "accessibility" | "hikerSeason" | "sacScale" | "trailNo";
 
 export interface FoundView {
   id: string;
@@ -41,7 +41,7 @@ export function viewOf(t: FoundTrail): FoundView {
   const attrs: Partial<Record<Attr, string>> = {};
   const put = (k: Attr, v: string | null) => { if (v) attrs[k] = v; };
   put("surface", t.surface); put("hike", t.uses.hike); put("bike", t.uses.bike); put("horse", t.uses.horse); put("dogs", t.uses.dogs);
-  put("access", t.access); put("trailClass", t.trailClass); put("grade", t.grade); put("accessibility", t.accessibility);
+  put("access", t.access); put("trailClass", t.trailClass); put("trailClassLabel", t.trailClassLabel); put("useText", t.useText); put("grade", t.grade); put("accessibility", t.accessibility);
   put("hikerSeason", t.hikerSeason); put("sacScale", t.sacScale); put("trailNo", t.trailNo);
   return {
     id: t.id, name: t.name, manager: t.manager, sources: t.sources, paths: t.paths, mappedMi: t.mappedMi,
@@ -168,7 +168,7 @@ export function FoundTrailDetail({ id, origin, onClose }: { id: string; origin: 
   const out = activeOuting(d);
   const here = out?.placeRef === ref;
   const curated = v.atlasId ? TRAILS.find((t) => t.id === v.atlasId) : undefined;
-  const diff = difficultyText({ trailClass: v.attrs.trailClass ?? null, sacScale: v.attrs.sacScale ?? null });
+  const diff = difficultyText({ trailClass: v.attrs.trailClass ?? null, trailClassLabel: v.attrs.trailClassLabel ?? null, sacScale: v.attrs.sacScale ?? null });
   const srcKeys = [...new Set(v.sources.map((s) => s.source))] as SourceKey[];
   const leadTag = <Tag p="reference">{srcKeys.filter((k) => k !== "atlas").map((k) => SOURCE_META[k]?.label ?? k).join(" + ")}</Tag>;
   const hours = climb.state === "ok" ? bookHours({ mi: climb.mi, gain: climb.up }) : null;
@@ -177,6 +177,7 @@ export function FoundTrailDetail({ id, origin, onClose }: { id: string; origin: 
   const groundRows: [string, string | null][] = [
     ["Surface", yesNo(v.attrs.surface)],
     ["Hiking", yesNo(v.attrs.hike)],
+    ["Managed for", v.attrs.useText ?? null],
     ["Dogs", yesNo(v.attrs.dogs)],
     ["Bikes", yesNo(v.attrs.bike)],
     ["Horses", yesNo(v.attrs.horse)],
@@ -225,7 +226,7 @@ export function FoundTrailDetail({ id, origin, onClose }: { id: string; origin: 
       <section className="det-sec">
         <h3>Difficulty {diff && leadTag}</h3>
         <p>{diff ?? "Not rated by these sources. Judge it by the climb, the length and the terrain."}</p>
-        {v.attrs.trailClass && <p className="quiet small">Forest Service trail class describes how built-up the tread is, not how hard the hike is.</p>}
+        {v.attrs.trailClass && <p className="quiet small">Trail class (the federal agencies' shared scale) describes how built-up the tread is, not how hard the hike is.</p>}
       </section>
 
       <section className="det-sec">

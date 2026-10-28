@@ -20,7 +20,7 @@ export async function stubNetwork(page: Page, errors: string[]) {
   await ctx.route("https://haveanapp-pulse-collect.vercel.app/**", (r) => r.fulfill({ status: 200, contentType: "text/javascript", body: "" }));
   await ctx.route("https://inaturalist-open-data.s3.amazonaws.com/**", (r) => r.fulfill({ status: 200, contentType: "image/png", body: PNG_1PX }));
   /* live trail sources and the geocoder answer from the shared fixtures */
-  for (const host of ["https://nominatim.openstreetmap.org/**", "https://photon.komoot.io/**", "https://gis.colorado.gov/**", "https://apps.fs.usda.gov/**", "https://overpass-api.de/**"]) {
+  for (const host of ["https://nominatim.openstreetmap.org/**", "https://photon.komoot.io/**", "https://gis.colorado.gov/**", "https://apps.fs.usda.gov/**", "https://mapservices.nps.gov/**", "https://gis.blm.gov/**", "https://overpass-api.de/**"]) {
     await ctx.route(host, (r) => {
       const body = sourceResponse(r.request().url());
       return body === undefined ? r.fulfill({ status: 404, body: "" }) : r.fulfill({ contentType: "application/json", body: JSON.stringify(body) });

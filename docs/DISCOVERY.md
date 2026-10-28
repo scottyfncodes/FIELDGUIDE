@@ -48,6 +48,8 @@ Nothing is bundled, so coverage doesn't cost download size.
 | --- | --- | --- | --- |
 | **COTREX**, Colorado Trail Explorer (CPW), state GIS server layer 40 + trailheads layer 29 | all of Colorado, about 40,000 mi from 230+ managers | name, manager, surface, hike/bike/horse/dogs, access, min/max elevation, length, edit date; trailheads with fee/water/restrooms | live: CORS allowed, 2,000 records a page, edits through 2023 |
 | **USFS** National Forest System trails (EDW) | every national forest in the US: the Rockies and far beyond | Forest Service trail class 1–5, typical grade, surface, accessibility, the season it's managed for hikers, trail number | live: CORS allowed, works in Wyoming as well as Colorado |
+| **National Park Service** public trails (NPS national dataset, FeatureServer 0) | every national park unit | trail class 1–5 where rated ("Unknown" stays unrated), surface, managed use, access notes, park name, edit date | live: CORS allowed, paged |
+| **BLM** routes (National GTLF public display, layer 7) | BLM land in every western state | route name, surface, managed modes of travel, access restriction, mapped miles | live: CORS allowed, paged |
 | **OpenStreetMap** via Overpass | North America (capped at 15 mi radius) | named footpaths, SAC scale, surface, dog rules | Overpass refuses datacenter clients (406), so it was written to its documented JSON format and couldn't be checked from the build box. If it fails, the other sources still show and the footer says it didn't answer |
 | **Atlas classics** | the original 47 | field-checked notes | in-app |
 
@@ -58,14 +60,16 @@ Sandbox (a datacenter, not a phone):
 | --- | --- | --- | --- | --- |
 | Boulder, CO, 10 mi | 1,296 segments | 32 | failed (406) | 400 |
 | Jackson, WY, 10 mi | skipped | 115 | failed | 93 |
-| Moab, UT, 10 mi | skipped | 0 | failed | **0** |
+| Moab, UT, 10 mi (before NPS and BLM) | skipped | 0 | failed | **0** |
+| Moab, UT, 10 mi (with NPS and BLM) | skipped | 0 | failed | **10** |
+| Zion, UT, 10 mi (NPS) | skipped | | failed | 28 |
 | Banff, AB, 10 mi | skipped | skipped | failed | **0** |
 | Denver, 50 mi | 9,084 in range: capped (see below) | 961 | failed | 626 |
 
-Both ArcGIS layers support `resultOffset` paging (3 pages, no duplicates). Outside
-Colorado and the national forests, coverage depends entirely on OpenStreetMap, which
-refuses datacenter clients, so it is **unverified until checked from a phone**. Moab
-(BLM land) and Canada show nothing without it. When OSM fails and nothing else is found,
+Both ArcGIS layers support `resultOffset` paging (3 pages, no duplicates). National parks and BLM land
+were added after a real Moab search came back empty. Outside Colorado and federal land
+(city parks, state parks elsewhere, Canada), coverage depends on OpenStreetMap, which
+refuses datacenter clients, so it is **unverified until checked from a phone**. When OSM fails and nothing else is found,
 the app says a source didn't answer rather than "no trails here".
 
 How a search works (`lib/discover.ts`):
@@ -74,16 +78,16 @@ How a search works (`lib/discover.ts`):
    than 6,000 segments (a 50 mi Front Range search holds about 9,100), the box shrinks
    in proportion to the overflow, nearest first, and the footer says how far it reached.
    Records are then paged with `resultOffset`.
-   Each source has a deadline (45 s ArcGIS, 35 s Overpass). COTREX and USFS results show
+   Each source has a deadline (45 s ArcGIS, 35 s Overpass). The ArcGIS sources show
    as soon as they arrive; OpenStreetMap merges in when it answers.
    **Privacy:** the services get the search point rounded to 0.01° (about 1 km), with
    the box widened by a mile. Exact distances are computed on the phone. The town-name
    lookup and iNaturalist "seen nearby" queries are rounded the same way.
-2. **Segments to trails.** A source's segments are grouped by normalized name and
-   manager, then split into pieces that actually connect. Two "Mesa Trail"s miles apart
+2. **Segments to trails.** A source's segments are grouped by normalized name (not
+   manager: Twin Sisters crosses from a national forest into a national park), then split into pieces that actually connect. Two "Mesa Trail"s miles apart
    stay two trails.
 3. **Dedupe across sources.** Same normalized name and geometry within a quarter mile is
-   one trail. COTREX leads, then USFS, then OSM. Gaps are filled from the others and
+   one trail. COTREX leads, then NPS, USFS, BLM, then OSM. Gaps are filled from the others and
    every source id is kept.
 4. A COTREX trailhead within 0.15 mi of the line is attached. A found trail that matches
    a curated classic links to it.
@@ -97,7 +101,7 @@ What's shown and how it's labelled:
 - **Climb** is *computed* from Open-Meteo's free elevation API (Copernicus 90 m DEM)
   along the longest mapped section.
 - **Time** is a book-time *estimate*.
-- **Difficulty** is the Forest Service trail class or the OSM SAC scale, worded as what
+- **Difficulty** is the Forest Service or Park Service trail class (one interagency 1–5 scale) or the OSM SAC scale, worded as what
   it is. Otherwise "not rated by these sources".
 - Distances are straight lines. Directions open Google Maps for real driving. With no
   mapped trailhead, the sheet warns that the point may lack road access.

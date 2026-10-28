@@ -42,13 +42,27 @@ export const overpassElements = () => [
     geometry: [{ lat: 39.995, lon: -105.29 }, { lat: 39.996, lon: -105.295 }, { lat: 39.998, lon: -105.3 }] },
 ];
 
+/* NPS and BLM: two trails near Moab, Utah, where COTREX and the national forests
+   have nothing (the gap a real search hit). Attribute values copied from the live layers. */
+export const MOAB = { lat: 38.573, lon: -109.55 };
+export const npsFeatures = () => [
+  { attributes: { OBJECTID: 41, TRLNAME: "Park Avenue Trail", TRLSURFACE: "Native", TRLCLASS: "Class 2: Minor Development", TRLUSE: "Hiker/Pedestrian", UNITNAME: "Arches National Park", EDITDATE: 1600000000000, ACCESSNOTES: null },
+    geometry: { paths: [[[-109.5823, 38.6283], [-109.5801, 38.6301], [-109.5779, 38.6322]]] } },
+  { attributes: { OBJECTID: 42, TRLNAME: "Unrated Spur", TRLSURFACE: "Unknown", TRLCLASS: "Unknown", TRLUSE: null, UNITNAME: "Arches National Park", EDITDATE: null, ACCESSNOTES: null },
+    geometry: { paths: [[[-109.59, 38.62], [-109.592, 38.621]]] } },
+];
+export const blmFeatures = () => [
+  { attributes: { OBJECTID: 7001, ROUTE_PRMRY_NM: "MOAB BRAND TRAILS", OBSRVE_SRFCE_TYPE: "Natural", PLAN_MODE_TRNSPRT: "Non-Mechanized; Mechanized", PLAN_ACCESS_RSTRCT: "None", BLM_MILES: 1.2, GIS_MILES: 1.2, ADMIN_ST: "UT" },
+    geometry: { paths: [[[-109.6201, 38.6501], [-109.6182, 38.6489], [-109.6163, 38.6472]]] } },
+];
+
 export const nominatimResults = () => [
   { place_id: 1, osm_type: "relation", osm_id: 112474, lat: "40.0149856", lon: "-105.2705456", category: "boundary", type: "administrative", addresstype: "city", name: "Boulder", display_name: "Boulder, Boulder County, Colorado, United States" },
   { place_id: 2, osm_type: "node", osm_id: 999, lat: "40.0076", lon: "-105.2659", category: "amenity", type: "university", addresstype: "amenity", name: "University of Colorado Boulder", display_name: "University of Colorado Boulder, Boulder, Boulder County, Colorado, 80309, United States" },
 ];
 
 /** A URL router for fetch stubs: every source answers from the fixtures above. */
-export function sourceResponse(url: string, _init?: { body?: unknown }, opts: { cotrexExtra?: number } = {}): unknown | undefined {
+export function sourceResponse(url: string, _init?: { body?: unknown }, opts: { cotrexExtra?: number; federal?: boolean } = {}): unknown | undefined {
   if (url.includes("nominatim.openstreetmap.org/search")) return nominatimResults();
   if (url.includes("nominatim.openstreetmap.org/reverse")) return { address: { city: "Boulder", state: "Colorado" } };
   if (url.includes("Colorado_State_Basemap/MapServer/40/query")) {
@@ -57,6 +71,8 @@ export function sourceResponse(url: string, _init?: { body?: unknown }, opts: { 
   }
   if (url.includes("Colorado_State_Basemap/MapServer/29/query")) return { features: cotrexTrailheads() };
   if (url.includes("EDW_TrailNFSPublish")) return url.includes("returnCountOnly=true") ? { count: 1 } : { features: usfsFeatures() };
+  if (url.includes("mapservices.nps.gov")) return url.includes("returnCountOnly=true") ? { count: opts.federal ? 2 : 0 } : { features: opts.federal ? npsFeatures() : [] };
+  if (url.includes("gis.blm.gov")) return url.includes("returnCountOnly=true") ? { count: opts.federal ? 1 : 0 } : { features: opts.federal ? blmFeatures() : [] };
   if (url.includes("overpass-api.de")) return { elements: overpassElements() };
   if (url.includes("api.open-meteo.com/v1/elevation")) {
     const n = new URL(url).searchParams.get("latitude")!.split(",").length;

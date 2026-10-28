@@ -13,10 +13,18 @@
    USFS         Forest Service National Forest System trails (EDW), every
                 national forest in the US. Trail class, grade, surface,
                 accessibility and the season it's managed for hikers.
+   NPS          National Park Service public trails, every park unit. Trail
+                class, surface, allowed use, park name, edit date.
+   BLM          Bureau of Land Management trails managed for public use (GTLF),
+                the West's public land outside parks and forests (Moab, the
+                desert Southwest). Surface, mode of travel, mileage.
    OSM          OpenStreetMap via the Overpass API: named footpaths anywhere in
-                North America. Fills gaps (city parks, Canada, Mexico, BLM). ODbL. */
+                North America. Fills gaps (city parks, Canada, Mexico). ODbL.
+   NPS and BLM were added after a phone search around Moab found nothing:
+   no COTREX outside Colorado, no national forest within 10 mi. Both were
+   checked live (CORS allowed, paging supported). */
 
-export type SourceKey = "atlas" | "cotrex" | "usfs" | "osm";
+export type SourceKey = "atlas" | "cotrex" | "nps" | "usfs" | "blm" | "osm";
 export type LatLon = [number, number];
 
 export interface Bbox { south: number; west: number; north: number; east: number }
@@ -46,6 +54,10 @@ export interface Segment {
   trailNo?: string | null;
   sacScale?: string | null;
   wheelchair?: string | null;
+  /** the source's own trail-class wording (NPS: "Class 2: Minor Development") */
+  trailClassLabel?: string | null;
+  /** who the trail is managed for, in the source's words (NPS "Hiker/Pedestrian", BLM "Non-Motorized") */
+  useText?: string | null;
   /** ms since epoch, when the source says */
   updated?: number | null;
 }
@@ -72,6 +84,14 @@ export const SOURCE_META: Record<SourceKey, { label: string; long: string; licen
     label: "USFS", long: "U.S. Forest Service, National Forest System trails",
     license: "U.S. government public data", url: "https://data.fs.usda.gov/geodata/edw/datasets.php",
   },
+  nps: {
+    label: "NPS", long: "National Park Service, public trails",
+    license: "U.S. government public data", url: "https://public-nps.opendata.arcgis.com",
+  },
+  blm: {
+    label: "BLM", long: "Bureau of Land Management, trails managed for public use (GTLF)",
+    license: "U.S. government public data", url: "https://catalog.data.gov/dataset/blm-natl-gtlf-public-managed-trails",
+  },
   osm: {
     label: "OpenStreetMap", long: "OpenStreetMap contributors via the Overpass API",
     license: "© OpenStreetMap contributors, ODbL", url: "https://www.openstreetmap.org/copyright",
@@ -81,6 +101,8 @@ export const SOURCE_META: Record<SourceKey, { label: string; long: string; licen
 export const COTREX_URL = "https://gis.colorado.gov/public/rest/services/OIT/Colorado_State_Basemap/MapServer";
 export const USFS_URL = "https://apps.fs.usda.gov/arcx/rest/services/EDW/EDW_TrailNFSPublish_01/MapServer/0";
 export const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
+export const NPS_URL = "https://mapservices.nps.gov/arcgis/rest/services/NationalDatasets/NPS_Public_Trails/FeatureServer/0";
+export const BLM_URL = "https://gis.blm.gov/arcgis/rest/services/transportation/BLM_Natl_GTLF_Public_Display/MapServer/7";
 
 /** Colorado's lat/lon box: COTREX has nothing outside it. */
 export const COLORADO: Bbox = { south: 36.99, west: -109.06, north: 41.01, east: -102.04 };
@@ -229,6 +251,47 @@ export function parseUsfs(features: any[]): Segment[] {
   });
 }
 
+/* ---- NPS ---- */
+export const NPS_WHERE = "TRLNAME IS NOT NULL AND TRLSTATUS = 'Existing' AND PUBLICDISPLAY = 'Public Map Display'";
+const NPS_FIELDS = ["OBJECTID", "TRLNAME", "TRLSURFACE", "TRLCLASS", "TRLUSE", "UNITNAME", "EDITDATE", "ACCESSNOTES"];
+
+export function parseNps(features: any[]): Segment[] {
+  return features.flatMap((f): Segment[] => {
+    const a = f?.attributes ?? {};
+    const name = str(a.TRLNAME);
+    const paths = esriPaths(f?.geometry);
+    if (!name || !paths.length) return [];
+    const cls = str(a.TRLCLASS);
+    const n = cls?.match(/^Class\s*([1-5])/i)?.[1] ?? null; // NPS also says "Unknown": that stays unrated
+    return [{
+      source: "nps", sourceId: String(a.OBJECTID), name, manager: str(a.UNITNAME) ?? "National Park Service",
+      paths, lengthMi: null, surface: str(a.TRLSURFACE)?.toLowerCase() ?? null,
+      trailClass: n, trailClassLabel: n ? cls : null, useText: str(a.TRLUSE), access: str(a.ACCESSNOTES),
+      updated: numOrNull(a.EDITDATE),
+    }];
+  });
+}
+
+/* ---- BLM ---- */
+export const BLM_WHERE = "ROUTE_PRMRY_NM IS NOT NULL";
+const BLM_FIELDS = ["OBJECTID", "ROUTE_PRMRY_NM", "OBSRVE_SRFCE_TYPE", "PLAN_MODE_TRNSPRT", "PLAN_ACCESS_RSTRCT", "BLM_MILES", "GIS_MILES", "ADMIN_ST"];
+
+export function parseBlm(features: any[]): Segment[] {
+  return features.flatMap((f): Segment[] => {
+    const a = f?.attributes ?? {};
+    const raw = str(a.ROUTE_PRMRY_NM);
+    const paths = esriPaths(f?.geometry);
+    if (!raw || !paths.length) return [];
+    const access = str(a.PLAN_ACCESS_RSTRCT);
+    return [{
+      source: "blm", sourceId: String(a.OBJECTID), name: titleCase(raw), manager: "Bureau of Land Management",
+      paths, lengthMi: numOrNull(a.BLM_MILES) ?? numOrNull(a.GIS_MILES),
+      surface: str(a.OBSRVE_SRFCE_TYPE)?.toLowerCase() ?? null,
+      useText: str(a.PLAN_MODE_TRNSPRT), access: access && access.toLowerCase() !== "none" ? access : null,
+    }];
+  });
+}
+
 /* ---- OpenStreetMap / Overpass ---- */
 export function overpassQuery(b: Bbox, limit = 2500): string {
   const box = [b.south, b.west, b.north, b.east].map((n) => n.toFixed(4)).join(",");
@@ -304,6 +367,25 @@ export async function fetchUsfs(lat: number, lon: number, radiusMi: number, fetc
     return { status: "error", items: [] };
   }
 }
+
+async function fetchFederal(
+  url: string, where: string, fields: string[], parse: (f: any[]) => Segment[],
+  lat: number, lon: number, radiusMi: number, fetchImpl: Fetch,
+): Promise<SourceResult<Segment>> {
+  if (!US_BOXES.some((b) => intersects(bboxAround(lat, lon, radiusMi), b))) return { status: "skipped", items: [] };
+  try {
+    const { box, limitedToMi } = await denseSafe(url, where, lat, lon, radiusMi, fetchImpl);
+    const feats = await arcgisQuery(url, where, fields, box, fetchImpl, { orderBy: "OBJECTID", simplifyDeg: simplifyFor(radiusMi) });
+    return { status: "ok", items: parse(feats), limitedToMi };
+  } catch {
+    return { status: "error", items: [] };
+  }
+}
+
+export const fetchNps = (lat: number, lon: number, radiusMi: number, fetchImpl: Fetch = fetch) =>
+  fetchFederal(NPS_URL, NPS_WHERE, NPS_FIELDS, parseNps, lat, lon, radiusMi, fetchImpl);
+export const fetchBlm = (lat: number, lon: number, radiusMi: number, fetchImpl: Fetch = fetch) =>
+  fetchFederal(BLM_URL, BLM_WHERE, BLM_FIELDS, parseBlm, lat, lon, radiusMi, fetchImpl);
 
 /** OSM is the gap-filler: capped at 15 mi so a big radius doesn't pull a city's every footway. */
 export const OSM_MAX_MI = 15;
