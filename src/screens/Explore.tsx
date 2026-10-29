@@ -299,7 +299,7 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
 
   return (
     <>
-    <TitleCard month={month} date={now} place={origin?.label ?? null}
+    <TitleCard month={month} date={now} place={origin?.label ?? null} radiusMi={radiusMi}
       counts={{ trails: found ? found.trails.length + found.atlas.length : null, color: COLORADO_LOCATIONS.length, sky: SITES.length }} />
     <div className="explore-top">
       <LocationPanel origin={origin} radiusMi={radiusMi} onOrigin={onOrigin} onRadius={onRadius} searching={disc.state === "loading"} />
@@ -528,8 +528,8 @@ export const Explore = forwardRef<ExploreHandle, Props>(function Explore(
         </div>
 
         {!!speciesHits.length && (
-          <div className="guide-hits" aria-label="In the field guide">
-            <div className="guide-hits-hd">In the field guide</div>
+          <div className="guide-hits" aria-label="In the plant guide">
+            <div className="guide-hits-hd">In the plant guide</div>
             {speciesHits.map((s) => (
               <button key={s.id} type="button" className="guide-hit" onClick={() => act.openSpecies(s.id)}>
                 <SpeciesArt s={s} className="gh-art" />

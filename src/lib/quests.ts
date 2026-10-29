@@ -136,7 +136,7 @@ export const QUESTS: Quest[] = [
   {
     id: "every-tree",
     title: "Every tree in the guide",
-    blurb: `Find all ${GUIDE_TREES.length} trees in the field guide, from plains cottonwood to bristlecone pine.`,
+    blurb: `Find all ${GUIDE_TREES.length} trees in the plant guide, from plains cottonwood to bristlecone pine.`,
     hint: "A long one. The guide lists where and how high each tree grows.",
     progress: (d) => {
       const have = new Set(collection(d).map((e) => e.speciesId));

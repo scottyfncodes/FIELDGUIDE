@@ -1,3 +1,4 @@
+import { BeReady } from "./BeReady";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import type { Place } from "../lib/places";
@@ -66,6 +67,7 @@ export function PlaceDetail({ place, start, onClose }: Props) {
       </header>
       {place.kind === "color" ? <ColorBody place={place} top={top} /> : <SkySummary place={place} />}
       {place.kind === "sky" && <>{top}<SkyBody place={place} /></>}
+      <BeReady lat={place.lat} lon={place.lon} label={place.name} />
       <YourFinds place={place} />
       <NearbyNature place={place} />
     </article>

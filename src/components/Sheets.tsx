@@ -50,7 +50,7 @@ export function SpeciesPage({ s, onClose }: { s: Species; onClose: () => void })
   const month = currentMonth();
   const lookNow = s.look.filter((l) => l.months.includes(month));
   return (
-    <SheetFrame label={`${s.common} field guide entry`} onClose={onClose}>
+    <SheetFrame label={`${s.common} plant guide entry`} onClose={onClose}>
       <figure className="sp-hero">
         {taxon.state === "ok" && taxon.value.photo ? (
           <>
@@ -231,14 +231,14 @@ export function GuideIndex({ onClose }: { onClose: () => void }) {
   const list = SPECIES.filter((s) => (g === "all" || s.groups.includes(g)) &&
     (!q || `${s.common} ${s.sci} ${s.family}`.toLowerCase().includes(q.toLowerCase())));
   return (
-    <SheetFrame label="Field guide" onClose={onClose}>
+    <SheetFrame label="Plant guide" onClose={onClose}>
       <header className="sp-head">
         <div className="det-eyebrow">FIELD GUIDE · {SPECIES.length} COLORADO PLANTS</div>
-        <h2 className="det-name">Field Guide</h2>
+        <h2 className="det-name">Plant Guide</h2>
         <p className="quiet">Common trees, shrubs and wildflowers along the trails in this atlas. You've found {found.size} of them.</p>
       </header>
       <div className="search">
-        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search names" aria-label="Search the field guide" />
+        <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search names" aria-label="Search the plant guide" />
       </div>
       <div className="chips" role="toolbar" aria-label="Group">
         {(["all", "broadleaf", "conifer", "flower"] as const).map((k) => (
@@ -318,7 +318,7 @@ export function ObservationSheet({ id, onClose }: { id: string; onClose: () => v
                       <span><b>{cs.common}</b>{cs.idMarks[0]}</span>
                     </div>
                     <div className="id-actions">
-                      <button type="button" className="pa-btn" onClick={() => act.openSpecies(c)}>Field guide</button>
+                      <button type="button" className="pa-btn" onClick={() => act.openSpecies(c)}>Plant guide</button>
                       <button type="button" className="pa-btn pa-primary" onClick={() => updateObservation(o.id, { speciesId: c, idMethod: "key" })}>It's this one</button>
                     </div>
                   </li>
@@ -348,7 +348,7 @@ export function ObservationSheet({ id, onClose }: { id: string; onClose: () => v
       </section>
 
       <div className="id-actions">
-        {s && <button type="button" className="pa-btn" onClick={() => act.openSpecies(s.id)}>Field guide entry</button>}
+        {s && <button type="button" className="pa-btn" onClick={() => act.openSpecies(s.id)}>Plant guide entry</button>}
         {s && o.kind === "find" && <button type="button" className="pa-btn" onClick={() => updateObservation(o.id, { speciesId: null, idMethod: "none" })}>Not sure any more</button>}
         {o.taxon && <button type="button" className="pa-btn" onClick={() => act.openTaxon(o.taxon!.id)}>Species page</button>}
         {o.taxon && <button type="button" className="pa-btn" onClick={() => updateObservation(o.id, { taxon: null, idMethod: "none", photoLikelihood: undefined })}>Not sure any more</button>}

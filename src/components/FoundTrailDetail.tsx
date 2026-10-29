@@ -11,6 +11,7 @@ import { bookHours, fmtHours } from "../lib/trails";
 import { TRAILS } from "../data/trails";
 import { NearbyNature, YourFinds, useActions } from "./PlaceSections";
 import { NearbyWildlife } from "./Wildlife";
+import { BeReady } from "./BeReady";
 import { Tag, fmtDuration } from "./atlasBits";
 
 /* ---------- A TRAIL FROM THE LIVE SEARCH ----------
@@ -257,6 +258,8 @@ export function FoundTrailDetail({ id, origin, onClose }: { id: string; origin: 
         )}
         <button type="button" className="pa-btn pa-primary" onClick={() => act.identifyAt(keepFound(snapshot()))}>Log a find here</button>
       </div>
+
+      <BeReady lat={anchor.lat} lon={anchor.lon} label={v.trailhead ? `${v.trailhead.name}` : `${v.name} (a point on the trail)`} />
 
       {kept && <YourFinds place={kept} />}
       <NearbyWildlife lat={anchor.lat} lon={anchor.lon} />

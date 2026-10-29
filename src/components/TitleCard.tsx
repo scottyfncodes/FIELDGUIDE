@@ -16,12 +16,14 @@ const mirror = (d: string) => {
 };
 const PINES = [30, 60, 160, 190, 300, 330, 440, 470, 520, 548, 576, 616, 640];
 
-export function TitleCard({ month, date, counts, place }: {
+export function TitleCard({ month, date, counts, place, radiusMi }: {
   month: number;
   date: Date;
   /** trails: how many the current search found; null before there is one */
   counts: { trails: number | null; color: number; sky: number };
   place: string | null;
+  /** the search radius the trail count is for */
+  radiusMi: number;
 }) {
   return (
     <header className="title-card">
@@ -42,7 +44,9 @@ export function TitleCard({ month, date, counts, place }: {
       <div className="tc-plaque">
         <p className="tc-title">The {MONTH_NAME[month - 1]} Expedition</p>
         <p className="tc-counts">
-          {counts.trails != null ? `${counts.trails} trails nearby` : "Trails anywhere"} <i aria-hidden="true">◆</i> {counts.color} color spots <i aria-hidden="true">◆</i> {counts.sky} dark skies
+          {/* each count stays whole; on a narrow phone the line breaks at a diamond */}
+          <span className="tc-c">{counts.trails != null ? `${counts.trails} trails in ${radiusMi} mi` : "Trails anywhere"}</span> <i aria-hidden="true">◆</i>{" "}
+          <span className="tc-c">{counts.color} color spots</span> <i aria-hidden="true">◆</i> <span className="tc-c">{counts.sky} dark skies</span>
         </p>
       </div>
     </header>

@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "CO Field Atlas",
-  "short_name": "Field Atlas",
-  "description": "Colorado trails, fall color and dark skies, a field guide to the plants along the way, and your own atlas of what you find.",
+  "name": "Field Guide",
+  "short_name": "Field Guide",
+  "description": "Colorado trails, fall color and dark skies, a field guide to the plants and wildlife along the way, safety and survival reference that works offline, and your own journal of what you find.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

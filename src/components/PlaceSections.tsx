@@ -21,6 +21,8 @@ export interface Actions {
   openOuting: (id: string) => void;
   openGuide: () => void;
   identifyAt: (ref: PlaceRef | null) => void;
+  /** a Safety & Survival view, e.g. { topic: "weather" } or { flow: "lost" } */
+  openSafety: (params: Record<string, string>) => void;
   /** called when an outing at a trail ends, so the hiking log can be updated */
   onOutingEnded: (ref: PlaceRef | null, markHiked: boolean) => void;
   toast: (msg: string) => void;

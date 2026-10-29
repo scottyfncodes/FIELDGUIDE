@@ -26,7 +26,7 @@ test.afterEach(async () => {
 
 test("boots into the atlas with a forecast and no layout overflow", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/co field atlas/i);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^field guide$/i);
   await expect(page.locator("li.row")).toHaveCount(47);
   await expect(page.locator("g.mark-good").first()).toBeVisible();
   await expect(page.locator("g.mark-poor").first()).toBeVisible();
