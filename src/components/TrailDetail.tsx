@@ -1,3 +1,4 @@
+import { BeReady } from "./BeReady";
 import { useEffect, useRef, useState } from "react";
 import type { Area, LogEntry, StartPoint, Trail, Weather } from "../data/types";
 import { STATE, regionOfArea } from "../data/geography";
@@ -187,6 +188,8 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
         <div className="fieldlog-save">Saved on this device.</div>
         {p.done && <div className="stamp" aria-hidden="true">LOGGED</div>}
       </section>
+
+      <BeReady lat={t.lat} lon={t.lon} label={`${t.name} trailhead`} vehicleNote={[t.vehicle, t.vroad].filter(Boolean).join(" ")} />
 
       {place && <>
         <YourFinds place={place} />

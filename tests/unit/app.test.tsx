@@ -43,14 +43,14 @@ function stubSources(opts: { geo?: "ok" | "fail" } = {}) {
 describe("app boot", () => {
   it("renders the atlas with every trail, the map and the discovery controls", async () => {
     render(<App />);
-    expect(screen.getByRole("heading", { level: 1, name: /co field atlas/i })).toBeTruthy();
+    expect(screen.getByRole("heading", { level: 1, name: /^field guide$/i })).toBeTruthy();
     expect(rows().length).toBe(TRAILS.length);
     expect(screen.getByRole("application", { name: /map of colorado/i })).toBeTruthy();
     expect(document.querySelectorAll("g.mark").length).toBe(TRAILS.length);
     expect(screen.getByRole("searchbox", { name: /search the atlas classics/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /use my location/i })).toBeTruthy();
     expect(screen.getByLabelText(/address or place/i)).toBeTruthy();
-    expect(screen.getByText(`/${TRAILS.length} hiked`, { exact: false })).toBeTruthy();
+    expect(screen.getByLabelText(`0 of ${TRAILS.length} atlas classics hiked`)).toBeTruthy();
     expect(screen.getByRole("button", { name: /loading forecast/i })).toBeTruthy();
   });
 

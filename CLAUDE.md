@@ -1,6 +1,7 @@
-# CO Field Atlas: notes for contributors and agents
+# Field Guide: notes for contributors and agents
 
-CO Field Atlas merged CO Trail Atlas, Leaf Hunter and LOOKUP; docs/CONSOLIDATION.md is the map.
+Field Guide (formerly CO Field Atlas) merged CO Trail Atlas, Leaf Hunter and LOOKUP; docs/CONSOLIDATION.md is the map.
+Its Safety & Survival tab is ported from SOS; docs/SAFETY.md is the map for that.
 
 The look is a USGS quad sheet framed like a storybook film: paper, ink, pine and quad-red,
 Archivo for names and reading text, IBM Plex Mono for map-style labels, and Jost (a Futura
@@ -8,14 +9,16 @@ cut) only for title cards and intertitles. Each tab and sheet is a scene with it
 block, set by `data-scene` (`--scene`, `--scene-ink`, `--scene-accent`, `--scene-soft`,
 `--scene-deep` in `index.css`): Explore and trails forest and parchment, Identify powder blue
 and mustard, My Atlas and plants sage and terracotta, Quests mustard and burgundy, fall-color
-places burgundy and dusty pink, dark skies night and powder. Favor centered, symmetrical
+places burgundy and dusty pink, dark skies night and powder, Safety ink and paper with quad-red
+kept for calling for help and severe results. Favor centered, symmetrical
 compositions and double rules. Keep new UI in that voice. Foliage colors mean foliage
 status; don't reuse them for anything else.
 
 Run `npm run check` (typecheck, unit tests, build, e2e) before pushing.
 
 - Never invent a fact or a number. Label what kind of claim it is with the `Tag` component
-  (field guide, your record, suggestion, estimate, computed, iNaturalist). Unknown stays unknown.
+  (field guide, your record, suggestion, estimate, computed, iNaturalist, general reference,
+  official source). Unknown stays unknown.
 - Identification is a key over the user's answers, not image analysis. Never word results as certain.
 - Match iNaturalist records to guide species by taxon id, never by name. A model's
   suggested name is resolved to a taxon by exact scientific name once, then only the id is used.
@@ -26,6 +29,11 @@ Run `npm run check` (typecheck, unit tests, build, e2e) before pushing.
 - Don't change or remove the `co-trail-*` localStorage keys: existing users' logs live there.
 - Quest progress is derived from saved data only.
 - `src/lib/astro` and `src/lib/foliage` are verbatim ports; change them upstream too.
+- `src/data/safety/sos.ts` is generated from SOS. Don't rewrite safety or first-aid steps; flag
+  doubts in docs/SAFETY.md and change SOS too. Severe results keep the call button, and first-aid
+  screens keep the not-medically-reviewed note until a clinician has reviewed them.
+- Live hazard checks are opt-in. A failed check is never shown as an all-clear, and an empty alert
+  list never says an area is safe. Show source, time, point and staleness.
 
 ## Design guardrails
 

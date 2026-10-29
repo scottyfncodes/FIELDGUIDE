@@ -1,4 +1,4 @@
-# CO Field Atlas
+# Field Guide
 
 **The world is full of things you haven't noticed yet.**
 
@@ -6,10 +6,11 @@ Colorado trails, fall color and dark skies on one quad-sheet map, a field guide 
 plants along the way, and your own atlas of what you find. Built for a phone at the
 trailhead: it installs to the Home Screen, works offline, and keeps everything on the device.
 
-CO Field Atlas is the merger of three HaveAnApp apps: **CO Trail Atlas** (this repo,
+Field Guide (formerly CO Field Atlas) is the merger of three HaveAnApp apps: **CO Trail Atlas** (this repo,
 the base), **Leaf Hunter** (fall color) and **LOOKUP** (dark skies). See
 [docs/CONSOLIDATION.md](docs/CONSOLIDATION.md) for the audit, what moved where, the data
-model, migration, and the cutover and rollback plan.
+model, migration, and the cutover and rollback plan. Its Safety & Survival tab carries the outdoor
+material from the SOS Offline Survival Guide; see [docs/SAFETY.md](docs/SAFETY.md).
 
 ## What it does
 
@@ -29,7 +30,7 @@ model, migration, and the cutover and rollback plan.
   name. Where the site has photo recognition switched on (`ANTHROPIC_API_KEY`), a vision
   model suggests candidates. They're hedged, capped by photo quality, and resolved to
   iNaturalist taxa by id.
-- **Field Guide.** 46 common Colorado trees, shrubs and wildflowers, each tied to a verified
+- **Plant Guide.** 46 common Colorado trees, shrubs and wildflowers, each tied to a verified
   iNaturalist taxon: how to know it, habitat, elevation, when to look, Colorado records by
   month, look-alikes, cautions, and your own sightings. Reached from search, results, the
   atlas and place pages.
@@ -38,6 +39,12 @@ model, migration, and the cutover and rollback plan.
   sighting is optional (none, about 1 km, or exact) and never kept for sensitive species.
   Repeat finds stack on one card. Backup export/import, and import from Leaf Hunter and LOOKUP.
 - **Quests.** Optional challenges computed from what you've saved, never from taps.
+- **Safety & Survival.** SOS's 23 tap-through triage flows, first aid (pressure bandaging,
+  splinting), and the trail skills: weather, navigation, signaling (with a screen strobe), water,
+  shelter, fire, wildlife, vehicle trouble, wildfires, earthquakes and landslides. Bundled, searchable
+  and printable, so it works with no signal. Live conditions (NWS alerts, air quality, nearby help,
+  USGS quakes) run only when tapped and show their source, time and staleness. Every trail and place
+  page has a "Be ready" section. General reference, not medical care; not yet clinician-reviewed.
 
 Every value says what it is: field guide, your record, suggestion, estimate, computed, or
 iNaturalist. Estimates are labelled as estimates.

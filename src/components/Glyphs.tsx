@@ -44,12 +44,13 @@ export function LeafGlyph({ shape, className, title }: { shape: LeafShape; class
   );
 }
 
-/* Tab marks: a survey triangle, a viewfinder around a leaf, an open journal, a pennant on a cairn */
+/* Tab marks: a survey triangle, a viewfinder around a leaf, an open journal, a pennant on a cairn, a signal whistle */
 const TAB_ICONS = {
   explore: (<><path d="M12 4l9 15H3z" /><path d="M12 10v5" /></>),
   identify: (<><path d="M3 8V4h4M17 4h4v4M21 16v4h-4M7 20H3v-4" /><path d="M12 7c3 2 4 4 4 6s-2 4-4 4-4-2-4-4 1-4 4-6z" /><path d="M12 17v-6" /></>),
   atlas: (<><path d="M3 6c3-1 6-1 9 1v13c-3-2-6-2-9-1z" /><path d="M21 6c-3-1-6-1-9 1v13c3-2 6-2 9-1z" /></>),
   quests: (<><path d="M7 21V3" /><path d="M7 4h11l-3 4 3 4H7" /><path d="M4 21h8" /></>),
+  safety: (<><circle cx="9" cy="14" r="5.5" /><path d="M12.5 9.7V8.5h9v4.5h-6.6" /><circle cx="9" cy="14" r="1.6" /><path d="M5 9.5L3 6" /></>),
 };
 
 export function TabIcon({ tab }: { tab: keyof typeof TAB_ICONS }) {

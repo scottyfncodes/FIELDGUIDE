@@ -12,12 +12,14 @@ import { activeOuting, observationsOn, useAtlas } from "./lib/atlas";
 import { placeByRef } from "./lib/places";
 import type { PlaceRef } from "./lib/places";
 import { useRoute } from "./lib/router";
+import { TABS } from "./lib/router";
 import type { Tab } from "./lib/router";
 import { Explore, startOf } from "./screens/Explore";
 import type { ExploreHandle } from "./screens/Explore";
 import { Identify } from "./screens/Identify";
 import { Atlas } from "./screens/Atlas";
 import { Quests } from "./screens/Quests";
+import { Safety } from "./screens/Safety";
 import { TrailDetail } from "./components/TrailDetail";
 import { PlaceDetail } from "./components/PlaceDetail";
 import { GuideIndex, ObservationSheet, OutingSheet, SpeciesPage } from "./components/Sheets";
@@ -30,7 +32,7 @@ import { TabIcon } from "./components/Glyphs";
 
 const TRAIL_BY_ID = new Map(TRAILS.map((t) => [t.id, t]));
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
-const TAB_LABEL: Record<Tab, string> = { explore: "Explore", identify: "Nature ID", atlas: "Journal", quests: "Quests" };
+const TAB_LABEL: Record<Tab, string> = { explore: "Explore", identify: "Nature ID", atlas: "Journal", quests: "Quests", safety: "Safety" };
 
 /* The last place the person searched from, kept in the original start-point
    key and shape. Nothing is assumed when there isn't one: Explore asks. */
@@ -116,6 +118,7 @@ export default function App() {
       else openSheet("place", p.ref);
     },
     identifyAt: (ref: PlaceRef | null) => nav.go({ tab: "identify", sheet: null, params: ref ? { at: ref } : {} }),
+    openSafety: (params) => { returnFocus.current = null; nav.go({ tab: "safety", sheet: null, params }); },
     onOutingEnded: (ref, suggestHiked) => {
       const id = ref?.startsWith("trail:") ? ref.slice(6) : null;
       if (id && suggestHiked && !log[id]?.done) setHikePrompt(id);
@@ -173,12 +176,13 @@ export default function App() {
         <header className="appbar" {...behindSheet}>
           <div className="brand">
             <span className="brand-mark" aria-hidden="true">▲</span>
-            <h1>CO Field Atlas</h1>
+            <h1>Field Guide</h1>
           </div>
           {route.tab === "explore" && (
             <div className="appbar-right">
-              <span className="tally" aria-label={`${doneCount} of ${TRAILS.length} trails hiked`}>
-                <b>{doneCount}</b>/{TRAILS.length} hiked
+              {/* the log covers the curated atlas classics, so the count says so (search results can run to hundreds) */}
+              <span className="tally" aria-label={`${doneCount} of ${TRAILS.length} atlas classics hiked`}>
+                <b>{doneCount}</b>/{TRAILS.length} classics<span className="tally-word"> hiked</span>
               </span>
               <button type="button" className="wx-btn" onClick={refreshWeather} disabled={wxBusy}
                 aria-label={wxBusy ? "Loading forecast" : wx ? `Forecast from ${wxTime}. Refresh` : "Load today's forecast"}>
@@ -207,10 +211,12 @@ export default function App() {
           {route.tab === "identify" && <Identify at={(placeByRef(route.params.at)?.ref) ?? null} near={origin} onDone={() => { nav.go({ tab: "atlas", sheet: null, params: {} }, { replace: true }); window.scrollTo({ top: 0 }); }} />}
           {route.tab === "atlas" && <Atlas log={log} />}
           {route.tab === "quests" && <Quests />}
+          {route.tab === "safety" && <Safety params={route.params} origin={origin}
+            go={(params, o) => nav.go({ tab: "safety", sheet: null, params }, o)} />}
         </main>
 
         <nav className="tabbar" aria-label="Sections" {...behindSheet}>
-          {(["explore", "identify", "atlas", "quests"] as Tab[]).map((t) => (
+          {TABS.map((t) => (
             <button key={t} type="button" className={"tab" + (route.tab === t ? " on" : "")}
               aria-current={route.tab === t ? "page" : undefined} onClick={() => nav.tab(t)}>
               <TabIcon tab={t} />
@@ -219,7 +225,7 @@ export default function App() {
           ))}
           {/* the index tab slides to the current section (last child, so the buttons keep their order) */}
           <span className="tab-ink" aria-hidden="true"
-            style={{ ["--i" as string]: (["explore", "identify", "atlas", "quests"] as Tab[]).indexOf(route.tab) }} />
+            style={{ ["--i" as string]: TABS.indexOf(route.tab) }} />
         </nav>
 
         {prompted && (

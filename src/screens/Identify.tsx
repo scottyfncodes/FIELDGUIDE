@@ -103,7 +103,7 @@ export function Identify({ at, near, onDone }: { at: PlaceRef | null; near: Orig
         <section className="id-start">
           <p className="screen-eyebrow" aria-hidden="true">No. 2 · A field key</p>
           <h2 className="screen-title">Which plant?</h2>
-          <p className="screen-lede">Take a photo of the leaf, needles or flower, then answer a few quick questions. The field guide suggests what it might be.</p>
+          <p className="screen-lede">Take a photo of the leaf, needles or flower, then answer a few quick questions. The plant guide suggests what it might be.</p>
           {out && <p className="context-line">Saving to your outing at <b>{placeByRef(out.placeRef)?.name ?? "an unnamed place"}</b>.</p>}
           {!out && at && <p className="context-line">At <b>{placeByRef(at)?.name}</b>.</p>}
           <label className={"capture" + (busy ? " busy" : "")}>
@@ -230,7 +230,7 @@ function MatchCard({ m, chosen, onChoose }: { m: Match; chosen: boolean; onChoos
       )}
       {s.caution && <p className="caution">{s.caution}</p>}
       <div className="match-actions">
-        <button type="button" className="pa-btn" onClick={() => act.openSpecies(s.id)}>Field guide</button>
+        <button type="button" className="pa-btn" onClick={() => act.openSpecies(s.id)}>Plant guide</button>
         <button type="button" className="pa-btn pa-primary" onClick={onChoose}>It's this one</button>
       </div>
     </li>

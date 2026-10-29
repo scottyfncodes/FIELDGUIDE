@@ -9,8 +9,10 @@ import { LeafGlyph } from "./Glyphs";
 /* ---------- PROVENANCE ----------
    The rule carried over from LOOKUP: every claim says what kind of claim it
    is. Reference (the field guide), yours (your own records), suggestion (the
-   key), estimate (a model), computed (astronomy), iNaturalist (live records). */
-export type Prov = "reference" | "yours" | "suggestion" | "estimate" | "computed" | "inat";
+   key), estimate (a model), computed (astronomy), iNaturalist (live records),
+   general (safety reference that isn't about any one place), official (a
+   government source such as the National Weather Service). */
+export type Prov = "reference" | "yours" | "suggestion" | "estimate" | "computed" | "inat" | "general" | "official";
 const PROV_TEXT: Record<Prov, string> = {
   reference: "Field guide",
   yours: "Your record",
@@ -18,6 +20,8 @@ const PROV_TEXT: Record<Prov, string> = {
   estimate: "Estimate",
   computed: "Computed",
   inat: "iNaturalist",
+  general: "General reference",
+  official: "Official source",
 };
 export function Tag({ p, children }: { p: Prov; children?: ReactNode }) {
   return <span className={"prov prov-" + p}>{children ?? PROV_TEXT[p]}</span>;

@@ -43,7 +43,7 @@ export function Atlas({ log }: { log: Log }) {
           <div><dt>Finds</dt><dd>{d.observations.filter((o) => o.kind === "find").length}</dd></div>
           <div><dt>Trails hiked</dt><dd>{hiked}<small>/{TRAILS.length}</small></dd></div>
         </dl>
-        <div className="progress" role="progressbar" aria-label="Field guide species found" aria-valuemin={0} aria-valuemax={SPECIES.length} aria-valuenow={found.size}>
+        <div className="progress" role="progressbar" aria-label="Plant guide species found" aria-valuemin={0} aria-valuemax={SPECIES.length} aria-valuenow={found.size}>
           <span style={{ width: `${(found.size / SPECIES.length) * 100}%` }} />
         </div>
       </header>
@@ -68,7 +68,7 @@ export function Atlas({ log }: { log: Log }) {
           <p>Every bird, bug, leaf, flower and trail you log lands here, tied to where and when you found it. It gets more interesting with every outing.</p>
           <div className="id-actions">
             <button type="button" className="pa-btn pa-primary" onClick={() => act.identifyAt(null)}>Identify something</button>
-            <button type="button" className="pa-btn" onClick={act.openGuide}>Browse the field guide</button>
+            <button type="button" className="pa-btn" onClick={act.openGuide}>Browse the plant guide</button>
           </div>
         </div>
       ) : (

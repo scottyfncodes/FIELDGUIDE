@@ -36,10 +36,10 @@ async function keyOutAspen(user: ReturnType<typeof userEvent.setup>) {
 }
 
 describe("navigation", () => {
-  it("has the four destinations and no separate field-guide tab", () => {
+  it("has the five destinations and no separate field-guide tab", () => {
     render(<App />);
     const nav = screen.getByRole("navigation", { name: "Sections" });
-    expect(within(nav).getAllByRole("button").map((b) => b.textContent)).toEqual(["Explore", "Nature ID", "Journal", "Quests"]);
+    expect(within(nav).getAllByRole("button").map((b) => b.textContent)).toEqual(["Explore", "Nature ID", "Journal", "Quests", "Safety"]);
   });
 
   it("tabs are in the URL, so back and shared links work", async () => {
@@ -54,7 +54,7 @@ describe("navigation", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.type(screen.getByRole("searchbox", { name: /search the atlas classics/i }), "aspen");
-    await user.click(within(screen.getByLabelText("In the field guide")).getByRole("button", { name: /quaking aspen/i }));
+    await user.click(within(screen.getByLabelText("In the plant guide")).getByRole("button", { name: /quaking aspen/i }));
     const d = screen.getByRole("dialog");
     expect(within(d).getByRole("heading", { name: "Quaking aspen" })).toBeTruthy();
     expect(window.location.hash).toBe("#species=quaking-aspen");
@@ -150,7 +150,7 @@ describe("existing CO Trail Atlas data", () => {
     window.localStorage.setItem(LOG_KEY, JSON.stringify(log));
     const user = userEvent.setup();
     render(<App />);
-    expect(screen.getByText("/47 hiked", { exact: false }).textContent).toMatch(/2/);
+    expect(screen.getByLabelText("2 of 47 atlas classics hiked")).toBeTruthy();
     await user.click(tab(/atlas/));
     expect(screen.getByText("Trails hiked").nextSibling!.textContent).toMatch(/^2/);
     expect(JSON.parse(window.localStorage.getItem(LOG_KEY)!)).toEqual(log);

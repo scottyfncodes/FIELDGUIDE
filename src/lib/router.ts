@@ -10,10 +10,11 @@ import { useCallback, useEffect, useState } from "react";
      #identify&at=trail:greenmtn     a tab with a parameter
      #found=cotrex:mesa:123          a trail from a live search (or a kept one)
      #identify&taxon=144815          a wildlife species page (iNaturalist taxon id)
+     #safety&flow=bleeding           Safety & Survival views (see lib/safety.ts)
    One sheet at a time; opening another pushes history, so back returns to
    the previous sheet. */
-export type Tab = "explore" | "identify" | "atlas" | "quests";
-export const TABS: Tab[] = ["explore", "identify", "atlas", "quests"];
+export type Tab = "explore" | "identify" | "atlas" | "quests" | "safety";
+export const TABS: Tab[] = ["explore", "identify", "atlas", "quests", "safety"];
 
 export type SheetType = "trail" | "place" | "species" | "obs" | "guide" | "outing" | "found" | "taxon";
 const SHEETS: SheetType[] = ["trail", "place", "species", "obs", "guide", "outing", "found", "taxon"];

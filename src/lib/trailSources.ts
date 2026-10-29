@@ -75,7 +75,7 @@ export interface Trailhead {
 }
 
 export const SOURCE_META: Record<SourceKey, { label: string; long: string; license: string; url: string }> = {
-  atlas: { label: "Atlas", long: "CO Field Atlas, field-checked", license: "", url: "" },
+  atlas: { label: "Atlas", long: "Field Guide atlas classics, field-checked", license: "", url: "" },
   cotrex: {
     label: "COTREX", long: "Colorado Trail Explorer (Colorado Parks and Wildlife)",
     license: "Public data from Colorado Parks and Wildlife and partner land managers", url: "https://trails.colorado.gov",
