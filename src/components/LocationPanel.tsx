@@ -47,7 +47,7 @@ export function LocationPanel({ origin, radiusMi, onOrigin, onRadius, searching 
       return;
     }
     const rough = r.acc > ROUGH_ACCURACY_M;
-    if (rough) setMsg({ text: `Your phone's fix is rough (about ${Math.round(r.acc / 1000)} km). Distances may be off; type an address for a precise start.`, tone: "info" });
+    if (rough) setMsg({ text: `Your device's fix is rough (about ${Math.round(r.acc / 1000)} km). Distances may be off; type an address for a precise start.`, tone: "info" });
     const o: Origin = { kind: "gps", lat: r.lat, lon: r.lon, acc: r.acc, label: "Your location" };
     onOrigin(o);
     setEditing(false);
@@ -97,7 +97,7 @@ export function LocationPanel({ origin, radiusMi, onOrigin, onRadius, searching 
             </svg>
             <span>{locBusy ? "Finding you…" : "Use my location"}</span>
           </button>
-          <p className="lp-why">Your phone will ask first. To find trails, the public map services get your position rounded to about 1 km; the exact point is used only on this phone, to measure distances, and saved only here.</p>
+          <p className="lp-why">Your device will ask first. To find trails, the public map services get your position rounded to about 1 km; the exact point is used only on this device, to measure distances, and saved only here.</p>
           <div className="lp-or" aria-hidden="true"><span>or</span></div>
           <form className="lp-form" onSubmit={search} role="search">
             <label htmlFor="lp-q" className="sr-only">Address or place</label>

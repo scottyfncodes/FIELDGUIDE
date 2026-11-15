@@ -447,7 +447,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(
       .sort((a, b) => b.inR.length - a.inR.length)
       .forEach(({ rg, inR }) => {
       const label = `${rg.short} · ${inR.length}`;
-      const bw = textW(label, 10) + 8, bh = 18;
+      const bw = textW(label, 12) + 8, bh = 20;
       const x0 = Math.min(...inR.map((m) => m.x)), x1 = Math.max(...inR.map((m) => m.x));
       const y0 = Math.min(...inR.map((m) => m.y)), y1 = Math.max(...inR.map((m) => m.y));
       const cx = (x0 + x1) / 2;
@@ -471,7 +471,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(
       (b.t.id === selected ? 1 : 0) - (a.t.id === selected ? 1 : 0) || (b.t.views ?? 0) - (a.t.views ?? 0));
     order.forEach((m) => {
       if (m.x < -20 || m.x > w + 20 || m.y < -20 || m.y > h + 20) return;
-      const lw = textW(m.t.name, 11.5), lh = 15;
+      const lw = textW(m.t.name, 12), lh = 16;
       const r = place([
         { x: m.x + mSize + 3, y: m.y - lh / 2, w: lw, h: lh },
         { x: m.x - mSize - 3 - lw, y: m.y - lh / 2, w: lw, h: lh },
@@ -485,13 +485,40 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(
   if (start) [1, 2, 4].forEach((hr) => {
     const ry = (ringMiles(hr) / 69) * U * S;
     const x = sx(start.lon), y = sy(start.lat) - ry - 3;
-    const lw = textW(`${hr} HR DRIVE`, 9);
-    if (place([{ x: x - lw / 2, y: y - 10, w: lw, h: 12 }])) ringLabels.push({ hr, x, y });
+    const lw = textW(`${hr} HR DRIVE`, 12);
+    if (place([{ x: x - lw / 2, y: y - 12, w: lw, h: 15 }])) ringLabels.push({ hr, x, y });
   });
+  const onScreen = (x: number, y: number, m = 40) => x > -m && x < w + m && y > -m && y < h + m;
+  /* City names sit to the right of their dot, as they always have. Where that
+     runs into the zoom buttons, a badge or a trail name, the name moves to a
+     side that is clear of everything; if there is none it stays put rather
+     than vanish. A range name gives way to a city name it would run through. */
+  const hard = [placed[0], ...placed.slice(1 + pts.length)];
+  const cityLabels = new Map<string, Rect>();
+  CITIES.forEach((c) => {
+    const x = sx(c.lon), y = sy(c.lat);
+    if (!onScreen(x, y) || (!c.major && view.k < 1.3 && w < 500)) return;
+    const lw = c.n.length * 6.6 + 2, lh = 15;
+    const right: Rect = { x: x + 5, y: y - lh / 2, w: lw, h: lh };
+    const others: Rect[] = [
+      { x: x - lw / 2, y: y + 5, w: lw, h: lh },
+      { x: x - lw / 2, y: y - 5 - lh, w: lw, h: lh },
+      { x: x - 5 - lw, y: y - lh / 2, w: lw, h: lh },
+    ];
+    const inFrame = (r: Rect) => r.x >= 2 && r.x + r.w <= w - 2 && r.y >= 2 && r.y + r.h <= h - 2;
+    const taken = [...cityLabels.values()];
+    const free = (r: Rect, of: Rect[]) => inFrame(r) && ![...of, ...taken].some((p) => overlaps(p, r));
+    cityLabels.set(c.n, free(right, hard) ? right : others.find((r) => free(r, placed)) ?? right);
+  });
+  const rangeClear = (n: string, x: number, y: number, rot: number) => {
+    const len = n.length * 12 * 0.6 * 1.22, a = (rot * Math.PI) / 180;
+    const bw = Math.abs(len * Math.cos(a)) + Math.abs(14 * Math.sin(a)), bh = Math.abs(len * Math.sin(a)) + Math.abs(14 * Math.cos(a));
+    const box = { x: x - bw / 2, y: y - bh / 2, w: bw, h: bh };
+    return ![...cityLabels.values()].some((r) => overlaps(r, box));
+  };
   tapTargets.current.rects = regionBadges.map((b) => ({ key: b.key, r: b.r }));
 
   const G = `translate(${w / 2 - view.cx * S} ${h / 2 - view.cy * S}) scale(${S})`;
-  const onScreen = (x: number, y: number, m = 40) => x > -m && x < w + m && y > -m && y < h + m;
   const selPt = pts.find((m) => m.t.id === selected);
 
   return (
@@ -554,7 +581,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(
         })}
         {RANGE_LABELS.map((r) => {
           const x = sx(r.lon), y = sy(r.lat);
-          return onScreen(x, y, 80) && (
+          return onScreen(x, y, 80) && rangeClear(r.n, x, y, r.rot) && (
             <text key={r.n} x={x} y={y} className="range-lbl" textAnchor="middle"
               transform={`rotate(${r.rot} ${x} ${y})`}>{r.n}</text>
           );
@@ -572,10 +599,11 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(
         {CITIES.map((c) => {
           const x = sx(c.lon), y = sy(c.lat);
           if (!onScreen(x, y) || (!c.major && view.k < 1.3 && w < 500)) return null;
+          const at = cityLabels.get(c.n);
           return (
-            <g key={c.n} transform={`translate(${x} ${y})`} className="city">
-              <rect x="-2.5" y="-2.5" width="5" height="5" />
-              <text x="6" y="3.5">{c.n}</text>
+            <g key={c.n} className="city">
+              <rect x={x - 2.5} y={y - 2.5} width="5" height="5" />
+              {at && <text x={at.x + 1} y={at.y + 11.5}>{c.n}</text>}
             </g>
           );
         })}
@@ -617,7 +645,7 @@ export const AtlasMap = forwardRef<AtlasMapHandle, Props>(function AtlasMap(
         {regionBadges.map((b) => (
           <g key={b.key} className="region-badge" transform={`translate(${b.x} ${b.y})`}>
             <rect width={b.r.w} height={b.r.h} />
-            <text x={b.r.w / 2} y={12.5} textAnchor="middle">{b.label}</text>
+            <text x={b.r.w / 2} y={14} textAnchor="middle">{b.label}</text>
           </g>
         ))}
       </svg>

@@ -447,7 +447,7 @@ function WildSave({ choice, shot, defaultPlace, outingName, onBack, onSaved }: {
               <span>{c === "none" ? "Don't save my location" : c === "approx" ? "Approximate, rounded to about 1 km" : `Exact${coords ? ` (±${coords.acc} m)` : ""}`}</span>
             </label>
           ))}
-          <p className="quiet small">Kept only on this phone and never shared. You can remove it from the find later.</p>
+          <p className="quiet small">Kept only on this device and never shared. You can remove it from the find later.</p>
           {locMsg && <p className="quiet small" role="status">{locMsg}</p>}
         </>}
       </fieldset>

@@ -105,7 +105,8 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 .layout { display: block; }
 .map-col { padding: 12px 12px 0; scroll-margin-top: var(--appbar-h); }
 .list-col { padding: 0 12px 28px; }
-.app { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
+/* room for the tab bar and its 3px top rule, so the end of a page never sits under either */
+.app { padding-bottom: calc(var(--tabbar-h) + 3px + env(safe-area-inset-bottom)); }
 
 /* ---------- map ---------- */
 .map-frame {
@@ -126,16 +127,17 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 .road { fill: none; stroke: var(--road); stroke-width: 1.6; opacity: 0.45; }
 .ring { fill: none; stroke: var(--water); stroke-width: 1; stroke-dasharray: 5 4; opacity: 0.55; }
 
-.neighbor-lbl { font-family: var(--mono); font-size: 10px; letter-spacing: 0.35em; fill: var(--ink-soft); opacity: 0.45; }
-.range-lbl { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.3em; fill: var(--contour-text); opacity: 0.7; pointer-events: none; }
+.neighbor-lbl { font-family: var(--mono); font-size: 12px; letter-spacing: 0.3em; fill: var(--ink-soft); opacity: 0.45; }
+.range-lbl { font-family: var(--mono); font-size: 12px; letter-spacing: 0.22em; fill: var(--contour-text); opacity: 0.7; pointer-events: none; }
 .city rect { fill: var(--ink); opacity: 0.65; }
 .city text {
-  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; font-weight: 600; fill: var(--ink); opacity: 0.75;
+  /* 11px with no tracking: larger letters in the footprint the 9.5px label had, so names still clear the zoom buttons */
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0; font-weight: 600; fill: var(--ink); opacity: 0.8;
   paint-order: stroke; stroke: var(--paper-2); stroke-width: 3px; stroke-linejoin: round;
 }
 .shield rect { fill: var(--paper); stroke: var(--road); stroke-width: 1.4; }
-.shield text { font-family: var(--mono); font-size: 9.5px; font-weight: 600; fill: var(--road); }
-.ring-lbl { font-family: var(--mono); font-size: 9px; letter-spacing: 0.16em; fill: var(--water); font-weight: 600; }
+.shield text { font-family: var(--mono); font-size: 12px; font-weight: 600; fill: var(--road); }
+.ring-lbl { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; fill: var(--water); font-weight: 600; }
 
 .mark-tri { fill: var(--paper); stroke: var(--pine); stroke-width: 2; stroke-linejoin: round; }
 .mark-good .mark-tri { fill: var(--good); stroke: #173B24; }
@@ -146,17 +148,17 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 .mark-sel .mark-tri { stroke: var(--quadred); stroke-width: 2.6; }
 .sel-ring { fill: none; stroke: var(--quadred); stroke-width: 2; stroke-dasharray: 4 3; }
 .mark-lbl {
-  font-family: var(--sans); font-size: 11.5px; font-weight: 700; font-stretch: 90%; fill: var(--ink);
+  font-family: var(--sans); font-size: 12px; font-weight: 700; font-stretch: 90%; fill: var(--ink);
   paint-order: stroke; stroke: var(--paper-2); stroke-width: 3.5px; stroke-linejoin: round; pointer-events: none;
 }
 .mark-lbl-sel { fill: var(--quadred); }
 .start-star { fill: var(--quadred); stroke: var(--paper); stroke-width: 1.4; }
 .start-lbl {
-  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; fill: var(--quadred); font-weight: 600;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.05em; fill: var(--quadred); font-weight: 600;
   paint-order: stroke; stroke: var(--paper-2); stroke-width: 3px; stroke-linejoin: round;
 }
 .region-badge rect { fill: var(--pine); rx: 2; }
-.region-badge text { font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; fill: var(--paper); }
+.region-badge text { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; fill: var(--paper); }
 .region-badge { cursor: pointer; }
 
 .zoom-ui { position: absolute; right: 8px; top: 8px; display: flex; flex-direction: column; gap: 6px; }
@@ -181,7 +183,7 @@ html[data-input="touch"] button:focus-visible { outline: none; }
   padding: 10px 0 10px 12px; text-align: left; background: none; border: 0;
 }
 .preview-eyebrow {
-  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; color: var(--contour-text); text-transform: uppercase;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; color: var(--contour-text); text-transform: uppercase;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .preview-name { font-size: 18px; font-weight: 800; font-stretch: 85%; line-height: 1.15; color: var(--pine); }
@@ -198,7 +200,7 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 
 .map-key {
   display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center;
-  padding: 7px 2px 0; font-family: var(--mono); font-size: 11px; color: var(--ink-soft);
+  padding: 7px 2px 0; font-family: var(--mono); font-size: 12px; color: var(--ink-soft);
 }
 .map-key .k { display: inline-block; width: 0; height: 0; margin-right: 5px; vertical-align: 0;
   border-left: 5.5px solid transparent; border-right: 5.5px solid transparent; border-bottom: 10px solid var(--paper);
@@ -286,7 +288,7 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 .group-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .group-drive { margin-left: auto; font-weight: 500; letter-spacing: 0.04em; opacity: 0.85; white-space: nowrap; text-transform: none; }
 .group-stamp {
-  font-size: 9.5px; letter-spacing: 0.1em; font-weight: 700; border: 1.5px solid var(--paper);
+  font-size: 12px; letter-spacing: 0.06em; font-weight: 700; border: 1.5px solid var(--paper);
   padding: 1px 6px; transform: rotate(-2deg); white-space: nowrap;
 }
 .rows { list-style: none; margin: 0; padding: 0; }
@@ -299,12 +301,12 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 }
 .row-main:hover { background: var(--paper-2); }
 .row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.row-top .chip { flex: none; font-size: 10.5px; padding: 1px 6px; }
+.row-top .chip { flex: none; font-size: 12px; padding: 0 6px; }
 .row-name { font-size: 17px; font-weight: 750; font-stretch: 88%; line-height: 1.2; color: var(--ink); }
 .row-done .row-name { color: var(--pine-2); }
 .row-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
-.row-where { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--contour-text); }
-.tag-view { font-family: var(--mono); font-size: 11px; color: var(--contour-text); font-weight: 600; }
+.row-where { font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--contour-text); }
+.tag-view { font-family: var(--mono); font-size: 12px; color: var(--contour-text); font-weight: 600; }
 .row-check {
   flex: none; width: 52px; display: grid; place-items: center;
   background: none; border: 0; border-left: 1px dashed var(--ink-faint);
@@ -320,7 +322,7 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 .empty p { margin: 0 0 12px; }
 
 .diff {
-  font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; padding: 2px 7px;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; padding: 1px 7px;
   border: 1.5px solid; font-weight: 600; white-space: nowrap; line-height: 1.4;
 }
 .diff-easy { color: var(--good); border-color: var(--good); }
@@ -329,7 +331,7 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 .diff-vhard { color: var(--paper); background: var(--quadred); border-color: var(--quadred); }
 
 .chip {
-  font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; padding: 2px 7px;
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; padding: 1px 7px;
   font-weight: 600; border: 1.5px solid var(--ink); white-space: nowrap; line-height: 1.4;
 }
 .chip-good { background: var(--good); color: var(--paper); border-color: var(--good); }
@@ -343,7 +345,7 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 
 .ft {
   margin-top: 28px; padding-top: 12px; border-top: 3px double var(--ink);
-  font-family: var(--mono); font-size: 11.5px; line-height: 1.7; color: var(--ink-soft);
+  font-family: var(--mono); font-size: 12px; line-height: 1.7; color: var(--ink-soft);
 }
 .ft p { margin: 0 0 8px; }
 
@@ -528,8 +530,9 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 .tab {
   min-height: var(--tabbar-h); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   background: none; border: 0; color: var(--ink-soft);
-  font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+  padding: 0 2px; font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0;
 }
+.tab span { white-space: nowrap; }
 .tab.on { color: var(--pine); }
 .tab.on span { border-bottom: 2px solid var(--quadred); }
 .tab svg { flex: none; }
@@ -555,7 +558,7 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 a { color: var(--pine); }
 .prov {
   display: inline-block; vertical-align: 1px; margin-left: 4px;
-  font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
   padding: 0 5px; border: 1px solid currentColor; line-height: 1.6; white-space: nowrap;
 }
 h3 .prov { margin-left: 6px; }
@@ -628,7 +631,7 @@ h3 .prov { margin-left: 6px; }
 /* ---------- explore: layers, foliage markers ---------- */
 .layers { display: flex; border: 1.5px solid var(--pine); margin-bottom: 10px; }
 .layer-tab {
-  flex: 1; min-height: 40px; padding: 0 6px; background: var(--paper); color: var(--pine); border: 0;
+  flex: 1; min-height: var(--tap); padding: 0 6px; background: var(--paper); color: var(--pine); border: 0;
   font-size: 14px; font-weight: 700; font-stretch: 90%; white-space: nowrap;
 }
 .layer-tab + .layer-tab { border-left: 1.5px solid var(--pine); }
@@ -849,7 +852,6 @@ h3 .prov { margin-left: 6px; }
 .lc-thumb { width: 56px; height: 56px; object-fit: cover; border: 1.5px solid var(--ink); }
 
 @media (min-width: 900px) {
-  .tabbar { left: 50%; right: auto; width: min(560px, 100%); transform: translateX(-50%); border: 3px double var(--ink); border-bottom: 0; }
   .map-col { height: calc(100vh - var(--appbar-h) - var(--tabbar-h)); }
   .place-actions { grid-template-columns: 1fr 1fr 1fr; }
   .place-actions .pa-primary { grid-column: auto; min-height: var(--tap); }
@@ -952,12 +954,12 @@ h3 .prov { margin-left: 6px; }
 .pick-plate .plate-index { stroke-width: 2.1; }
 .pick-where, .pick-name, .pick-meta, .pick-season { padding: 0 12px; }
 .pick-where {
-  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--contour-text);
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--contour-text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .pick-name { font-size: 19px; font-weight: 850; font-stretch: 82%; line-height: 1.08; color: var(--pine); }
-.pick-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 2px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); }
-.pick-season { margin-top: auto; padding-top: 6px; font-family: var(--mono); font-size: 11px; color: var(--good); }
+.pick-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 2px; font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+.pick-season { margin-top: auto; padding-top: 6px; font-family: var(--mono); font-size: 12px; color: var(--good); }
 
 /* empty + error states */
 .empty { text-align: center; padding: 30px 12px 34px; border: 2px dashed var(--ink-faint); margin-top: 14px; background: var(--paper); }
@@ -1128,7 +1130,7 @@ h3 .prov { margin-left: 6px; }
 .tc-band { position: absolute; left: 0; right: 0; bottom: 0; height: 25px; background: var(--forest); border-top: 1px solid var(--ink); }
 .tc-eyebrow {
   position: absolute; left: 0; right: 0; top: 9px; margin: 0;
-  font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink);
+  font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink);
 }
 .tc-plaque {
   position: absolute; left: 50%; bottom: 7px; transform: translateX(-50%);
@@ -1141,7 +1143,7 @@ h3 .prov { margin-left: 6px; }
   font-family: var(--display); font-weight: 600; font-size: clamp(13px, 3.9vw, 18px);
   letter-spacing: 0.18em; text-transform: uppercase; line-height: 1.2; color: var(--ink);
 }
-.tc-counts { margin-top: 2px !important; font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; color: var(--ink-soft); white-space: nowrap; }
+.tc-counts { margin-top: 2px !important; font-family: var(--mono); font-size: 12px; letter-spacing: 0; color: var(--ink-soft); white-space: nowrap; }
 .tc-counts i { font-style: normal; font-size: 7px; vertical-align: 1px; margin: 0 2px; color: var(--terracotta); }
 @media (prefers-reduced-motion: no-preference) {
   .tc-sun { animation: sun-up 1.2s var(--ease-out) both; }
@@ -1156,7 +1158,7 @@ h3 .prov { margin-left: 6px; }
 .layers { border: 2px solid var(--ink); }
 .layer-tab { font-family: var(--display); font-weight: 600; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); }
 .layer-tab + .layer-tab { border-left: 1.5px solid var(--ink); }
-.layer-ch { font-family: var(--mono); font-size: 10px; font-weight: 600; margin-right: 6px; opacity: 0.7; }
+.layer-ch { font-family: var(--mono); font-size: 12px; font-weight: 600; margin-right: 6px; opacity: 0.7; }
 /* three chapters must always fit a phone: wrap rather than push the page sideways */
 .layer-tab { min-width: 0; white-space: normal; line-height: 1.1; padding: 4px; }
 @media (max-width: 430px) {
@@ -1176,7 +1178,7 @@ h3 .prov { margin-left: 6px; }
 }
 .group-hd::before, .group-hd::after { content: ""; flex: 1 1 12px; height: 0; border-top: 3px double var(--ink); }
 .group-name { flex: 0 1 auto; }
-.group-drive { margin-left: 0; font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--terracotta); }
+.group-drive { margin-left: 0; font-family: var(--mono); font-size: 12px; letter-spacing: 0.04em; color: var(--terracotta); }
 .group-stamp { border-color: var(--burgundy); color: var(--burgundy); font-family: var(--mono); }
 
 /* the shelf: framed plates with a pine shadow */
@@ -1292,10 +1294,10 @@ h3 .prov { margin-left: 6px; }
 .lp-summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .lp-from { margin: 0; display: flex; flex-direction: column; min-width: 0; }
 .lp-from b { font-size: 18px; font-weight: 800; font-stretch: 85%; line-height: 1.2; color: var(--forest); overflow-wrap: anywhere; }
-.lp-eyebrow { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--contour-text); }
+.lp-eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--contour-text); }
 .lp-summary-actions { display: flex; gap: 6px; }
 .lp-choices { margin: 12px auto 0; max-width: 520px; text-align: left; }
-.lp-choices-hd { margin: 0 0 4px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--contour-text); }
+.lp-choices-hd { margin: 0 0 4px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--contour-text); }
 .lp-choices ul { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--ink); }
 .lp-choices button {
   display: grid; grid-template-columns: 1fr auto; gap: 0 8px; width: 100%; min-height: var(--tap); padding: 9px 4px;
@@ -1304,17 +1306,17 @@ h3 .prov { margin-left: 6px; }
 .lp-choices button:hover { background: var(--paper-2); }
 .lp-choices b { font-size: 15.5px; }
 .lp-choices span { grid-column: 1; font-size: 13px; color: var(--ink-soft); }
-.lp-choices small { grid-row: 1; grid-column: 2; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; color: var(--contour-text); }
+.lp-choices small { grid-row: 1; grid-column: 2; font-family: var(--mono); font-size: 12px; text-transform: uppercase; color: var(--contour-text); }
 .lp-radius { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--ink-faint); }
 .locpanel-set .lp-radius { justify-content: flex-start; }
-.lp-radius-lbl { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--contour-text); margin-right: 2px; }
+.lp-radius-lbl { font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--contour-text); margin-right: 2px; }
 .lp-r {
   min-height: 38px; min-width: 56px; padding: 0 10px; font-family: var(--mono); font-size: 13px; font-weight: 600;
   background: var(--paper); color: var(--ink); border: 1.5px solid var(--ink);
 }
 .lp-r.on { background: var(--forest); color: var(--ivory); border-color: var(--forest); }
 .lp-r:disabled { opacity: 0.5; }
-.lp-credit { margin: 8px 0 0; font-family: var(--mono); font-size: 9.5px; color: var(--ink-soft); opacity: 0.8; }
+.lp-credit { margin: 8px 0 0; font-family: var(--mono); font-size: 12px; color: var(--ink-soft); opacity: 0.8; }
 
 /* the field sheet */
 .dm-frame {
@@ -1331,10 +1333,10 @@ h3 .prov { margin-left: 6px; }
 .dm-th { fill: var(--ivory); stroke: var(--ink); stroke-width: 1.4; }
 .dm-th.on { fill: var(--quadred); }
 .dm-classic { fill: var(--marigold); stroke: var(--ink); stroke-width: 1.4; stroke-linejoin: round; }
-.dm-ring-lbl, .dm-north { font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; fill: var(--water); paint-order: stroke; stroke: var(--paper-2); stroke-width: 3px; }
+.dm-ring-lbl, .dm-north { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; fill: var(--water); paint-order: stroke; stroke: var(--paper-2); stroke-width: 3px; }
 .dm-north { fill: var(--ink); }
 .dm-origin-lbl, .dm-sel-lbl {
-  font-family: var(--mono); font-size: 10.5px; font-weight: 600; letter-spacing: 0.1em; fill: var(--ink);
+  font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.06em; fill: var(--ink);
   paint-order: stroke; stroke: var(--paper-2); stroke-width: 3.5px; stroke-linejoin: round; pointer-events: none;
 }
 .dm-sel-lbl { fill: var(--quadred); }
@@ -1350,7 +1352,7 @@ h3 .prov { margin-left: 6px; }
 .rg-frame { fill: var(--sky); stroke: var(--ink); stroke-width: 1.2; }
 .rg-line { fill: none; stroke: var(--forest); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .row-sel .rg-line { stroke: var(--quadred); }
-.row-src { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--contour-text); }
+.row-src { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--contour-text); }
 .chip-atlas { background: var(--marigold); color: var(--ink); border-color: var(--ink); }
 
 .loading-card { margin: 12px 0; padding: 18px 14px; text-align: center; border: 2px dashed var(--ink-faint); background: var(--paper); }
@@ -1416,7 +1418,7 @@ h3 .prov { margin-left: 6px; }
 .wild-glyph { color: var(--scene-deep, var(--pine)); }
 .wild-glyph svg { width: 70%; height: 70%; }
 .seg { display: flex; border: 1.5px solid var(--ink); margin: 6px 0 8px; }
-.seg-btn { flex: 1 1 0; min-width: 0; min-height: 40px; padding: 4px; font-family: var(--mono); font-size: 12px; font-weight: 600; background: var(--paper); color: var(--ink); border: 0; line-height: 1.15; }
+.seg-btn { flex: 1 1 0; min-width: 0; min-height: var(--tap); padding: 4px; font-family: var(--mono); font-size: 12px; font-weight: 600; background: var(--paper); color: var(--ink); border: 0; line-height: 1.15; }
 .seg-btn + .seg-btn { border-left: 1.5px solid var(--ink); }
 .seg-btn.on { background: var(--forest); color: var(--ivory); }
 .small-check { margin: 4px 0 8px; }
@@ -1478,9 +1480,18 @@ h3 .prov { margin-left: 6px; }
 .mono { font-family: var(--mono); }
 @media (max-width: 430px) { .tally-word { display: none; } }
 /* the plaque counts wrap rather than clip on narrow phones */
-@media (max-width: 400px) { .tc-counts { white-space: normal; line-height: 1.35; } }
+/* at 12px the three counts no longer share a phone's width, so they set as two centered lines */
+@media (max-width: 480px) {
+  .tc-counts { white-space: normal; line-height: 1.35; }
+  .tc-c:first-child { display: block; }
+  .tc-counts i:first-of-type { display: none; }
+  .title-card { height: clamp(116px, 16svh, 160px); }
+  .tc-sun { bottom: 58px; }
+  .tc-range { bottom: 40px; }
+  .tc-band { height: 41px; }
+}
 .tc-c { white-space: nowrap; }
-@media (max-width: 359px) { .tab { font-size: 9.5px; letter-spacing: 0; } .tab span { white-space: nowrap; } }
+@media (max-width: 359px) { .tab { font-size: 10.5px; letter-spacing: 0; } .tab span { white-space: nowrap; } }
 
 .safety { font-size: 16.5px; line-height: 1.5; }
 .safety .screen-title { margin-bottom: 8px; }
@@ -1737,3 +1748,88 @@ h3 .prov { margin-left: 6px; }
   .sf-controls, .sf-cap { display: none; }
   a { color: #000; text-decoration: none; }
 }
+
+/* ============================================================
+   REMEDIATION (GITCRAFT audit): desktop navigation, pressed
+   states, touch targets, and the card a broken screen shows.
+   ============================================================ */
+
+/* ---------- desktop: the sections sit under the masthead ----------
+   The tab bar used to float over the page as a box, covering whatever
+   scrolled beneath it. From 900px it is a strip in the lower half of the
+   header instead, so it takes its own space and nothing sits behind it.
+   --appbar-h grows to hold it and --tabbar-h drops to zero, so every sticky
+   offset and bottom inset that uses them follows without further changes. */
+@media (min-width: 900px) {
+  .app:not(.app-bare) { --masthead-h: 52px; --nav-h: 49px; --appbar-h: 101px; --tabbar-h: 0px; }
+  .app { padding-bottom: 0; }
+  .app:not(.app-bare) .appbar { align-items: flex-start; }
+  .app:not(.app-bare) .appbar > * { min-height: var(--masthead-h); }
+  .tabbar {
+    top: calc(var(--masthead-h) + env(safe-area-inset-top)); bottom: auto; height: var(--nav-h);
+    --padl: max(18px, env(safe-area-inset-left), calc((100% - 760px) / 2));
+    --padr: max(18px, env(safe-area-inset-right), calc((100% - 760px) / 2));
+    padding: 0 var(--padr) 0 var(--padl);
+    border-top: 1.5px solid var(--ink); border-bottom: 3px double var(--ink);
+  }
+  .tab { flex-direction: row; gap: 8px; min-height: 0; font-size: 13px; letter-spacing: 0.04em; }
+  .tab-ink { top: auto; bottom: -3px; }
+}
+
+/* ---------- pressed states ----------
+   On a touch screen there is no hover, so the press is the only immediate
+   answer to a tap. Three patterns, all already in the app:
+     paper controls take the darker paper tone (the zoom buttons),
+     filled controls take the lighter pine and drop a pixel (Directions),
+     framed plates shift onto their shadow (the shelf picks). */
+.pa-btn:active:not(:disabled), .fchip:active, .clear-btn:active,
+.layer-tab:active:not(.on), .seg-btn:active:not(.on), .lp-r:active:not(.on):not(:disabled),
+.region-chip:active:not(.on):not(:disabled), .row-main:active, .preview-main:active, .preview-x:active,
+.near-row:active, .more-btn:active, .triage-btn:active, .sa-row:active, .sa-sit:active, .tri-opt:active,
+.ready-link:active, .q-choice:active, .q-item:active, .guide-hit:active, .picker-list button:active,
+.obs-main:active, .sim-row:active, .lp-choices button:active, .os-main:active, .os-log:active, .card:active,
+.done-toggle:active, .sa-back:active, .search-x:active, .rate-star:active, .mrec-col:active,
+.file-btn:active, .wild-tile:active, .check:active, .crash-details summary:active { background-color: var(--paper-3); }
+/* controls drawn on a scene-colored bar darken with their own ink, whatever the scene */
+.wx-btn:active:not(:disabled), .det-act:active, .det-close:active { background-color: color-mix(in srgb, currentColor 20%, transparent); }
+.pa-primary:active:not(:disabled), .preview-go:active, .fchip-on:active,
+.layer-tab.on:active, .seg-btn.on:active, .lp-r.on:active, .region-chip.on:active { background-color: var(--pine-2); transform: translateY(1px); }
+.lp-locate:active:not(:disabled) { transform: translateY(1px); }
+.pa-danger:active:not(:disabled), .call-btn:active, .strobe-stop:active { background-color: #962F1B; transform: translateY(1px); }
+.kind-btn:active, .capture:active { transform: translate(2px, 2px); }
+.linkish:active, .sa-more:active, .lp-cancel:active { color: var(--pine-2); text-decoration-thickness: 2px; }
+.preview-x, .search-x, .det-act, .det-close, .wx-btn, .lp-r, .seg-btn, .triage-btn, .call-btn, .sa-row, .sa-sit, .tri-opt,
+.row-main, .near-row, .obs-main, .q-choice, .kind-btn, .more-btn { transition: background-color 0.12s, transform 0.12s var(--ease-out); }
+
+/* ---------- touch targets: 44 by 44 without redrawing the control ----------
+   These keep their drawn size; an invisible pad makes up the difference. */
+.wx-btn, .det-act, .clear-btn, .lp-r, .search-x, .region-chip, .q-item, .sa-save, .locpanel-set .pa-btn { position: relative; }
+.wx-btn::after, .det-act::after, .clear-btn::after, .lp-r::after, .search-x::after, .region-chip::after, .q-item::after,
+.sa-save::after, .locpanel-set .pa-btn::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: max(100%, var(--tap)); height: max(100%, var(--tap)); transform: translate(-50%, -50%);
+}
+/* a field fills its frame, border included, so the whole 44px box takes the tap */
+.search input, .sa-search input { height: var(--tap); margin-block: -1.5px; align-self: center; }
+.fchip-select select { inset: -1.5px; width: calc(100% + 3px); height: calc(100% + 3px); }
+.row-main { min-height: var(--tap); }
+.check { min-height: var(--tap); align-items: center; margin: 4px 0; padding: 0 4px; }
+.check input { margin: 0; }
+
+/* ---------- when a screen breaks (see ErrorBoundary.tsx) ---------- */
+.crash { text-align: center; }
+.crash .sa-back { display: flex; margin-bottom: 8px; }
+.crash-lede { max-width: 34em; margin: 0 auto 14px; font-size: 15.5px; }
+.crash .sos-plate { text-align: center; }
+.crash-solo { grid-template-columns: 1fr; }
+.crash-actions { justify-content: center; }
+.crash-details { margin: 18px auto 0; max-width: 34em; text-align: left; font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+.crash-details summary { display: flex; align-items: center; justify-content: center; min-height: var(--tap); padding: 0 4px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.crash-details p { margin: 0; padding: 8px 4px; border-top: 1px solid var(--ink-faint); overflow-wrap: anywhere; }
+.crash-strip {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 12px;
+  margin: 0; padding: 0 12px; min-height: var(--tap);
+  background: var(--paper-2); border-bottom: 1.5px solid var(--ink); font-family: var(--mono); font-size: 12.5px;
+}
+.crash-strip .linkish { min-height: var(--tap); }
+

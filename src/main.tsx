@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
+import { AppBoundary } from "./components/ErrorBoundary";
 import "./index.css";
 
 /* Sheets move focus to their Back button so keyboard and screen-reader users
@@ -10,10 +11,14 @@ const root = document.documentElement;
 root.dataset.input = window.matchMedia?.("(pointer: coarse)").matches ? "touch" : "keyboard";
 window.addEventListener("pointerdown", () => { root.dataset.input = "touch"; }, true);
 window.addEventListener("keydown", (e) => { if (!e.metaKey && !e.ctrlKey && !e.altKey) root.dataset.input = "keyboard"; }, true);
+/* iOS Safari only paints :active (the pressed states in index.css) once the page listens for touches */
+document.addEventListener("touchstart", () => {}, { passive: true });
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <AppBoundary>
+      <App />
+    </AppBoundary>
   </React.StrictMode>,
 );
 

@@ -84,7 +84,7 @@ export function Identify({ at, near, onDone }: { at: PlaceRef | null; near: Orig
               </button>
             ))}
           </div>
-          <p className="quiet small">Bird song identification isn't here yet. Photos stay on this phone unless you ask for a photo suggestion.</p>
+          <p className="quiet small">Bird song identification isn't here yet. Photos stay on this device unless you ask for a photo suggestion.</p>
         </section>
       </div>
     );
@@ -119,7 +119,7 @@ export function Identify({ at, near, onDone }: { at: PlaceRef | null; near: Orig
             <button type="button" className="pa-btn" onClick={() => setStep("key")}>No photo, just the questions</button>
           </div>
           {err && <p className="notice" role="alert">{err}</p>}
-          <p className="quiet small">If the camera doesn't open, Safari may not have permission: Settings, Safari, Camera. Photos stay on this phone.</p>
+          <p className="quiet small">If the camera doesn't open, Safari may not have permission: Settings, Safari, Camera. Photos stay on this device.</p>
           <p className="quiet small">The guide covers {SPECIES.length} common Colorado trees, shrubs and wildflowers. <button type="button" className="linkish" onClick={act.openGuide}>Browse the field guide</button></p>
           <button type="button" className="linkish" onClick={() => setKind(null)}>Not a plant? Choose again</button>
         </section>
@@ -347,7 +347,7 @@ function SaveFind({ speciesId, match, candidates, answers, shot, defaultPlace, o
       {coords && (
         <label className="check">
           <input type="checkbox" checked={keepCoords} onChange={(e) => setKeepCoords(e.target.checked)} />
-          <span>Also save my exact location (±{coords.acc} m). It stays on this phone and is never shared.</span>
+          <span>Also save my exact location (±{coords.acc} m). It stays on this device and is never shared.</span>
         </label>
       )}
 

@@ -94,7 +94,7 @@ function Index({ go, saved }: { go: Go; saved: string[] }) {
       <h2 className="screen-title">Safety &amp; Survival</h2>
       <p className={"sa-status" + (online ? "" : " off")} role="status">
         {!online ? "You're offline. Everything here except live conditions still works."
-          : offlineReady ? "Saved on this phone: the guide opens with no signal."
+          : offlineReady ? "Saved on this device: the guide opens with no signal."
           : "Open the app once with signal and it saves itself for use with no signal."}
       </p>
 
