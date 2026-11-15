@@ -192,7 +192,7 @@ function SkyBody({ place }: { place: Place }) {
           <div><span>Moon</span><b>{t.moonRise ? `Rises ${fmtClock(t.moonRise)}` : ""}{t.moonRise && t.moonSet ? " · " : ""}{t.moonSet ? `Sets ${fmtClock(t.moonSet)}` : ""}{!t.moonRise && !t.moonSet ? "No rise or set during the night" : ""}</b></div>
           <div><span>Moon-free dark</span><b>{dark ? `${Math.floor(t.moonFreeMinutes / 60)} hr ${t.moonFreeMinutes % 60} min` : "none"}</b></div>
         </div>
-        <p className="quiet small">Astronomy worked out on your phone, the same math LOOKUP uses. It doesn't know about clouds: <a href={LOOKUP_URL} target="_blank" rel="noreferrer">LOOKUP</a> adds the cloud forecast and the drive to make the go or no-go call.</p>
+        <p className="quiet small">Astronomy worked out on your device, the same math LOOKUP uses. It doesn't know about clouds: <a href={LOOKUP_URL} target="_blank" rel="noreferrer">LOOKUP</a> adds the cloud forecast and the drive to make the go or no-go call.</p>
       </section>
       {!!site.notes.length && (
         <section className="det-sec">

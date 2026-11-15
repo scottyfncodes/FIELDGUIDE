@@ -14,7 +14,7 @@ export const LOCATE_MESSAGE: Record<LocateFail, string> = {
   unsupported: "This browser can't share a location. Type an address or place instead.",
   insecure: "Location only works over a secure connection. Type an address or place instead.",
   denied: "Location is turned off for this site. You can type an address or place instead, or allow location in Settings, Safari, Location.",
-  unavailable: "Your phone couldn't get a fix just now. Try again in the open, or type an address or place.",
+  unavailable: "Your device couldn't get a fix just now. Try again in the open, or type an address or place.",
   timeout: "Finding you took too long. Try again, or type an address or place.",
 };
 

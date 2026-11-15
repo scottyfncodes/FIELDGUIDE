@@ -11,7 +11,7 @@ import type { WxPayload } from "./lib/weather";
 import { activeOuting, observationsOn, useAtlas } from "./lib/atlas";
 import { placeByRef } from "./lib/places";
 import type { PlaceRef } from "./lib/places";
-import { useRoute } from "./lib/router";
+import { formatHash, useRoute } from "./lib/router";
 import { TABS } from "./lib/router";
 import type { Tab } from "./lib/router";
 import { Explore, startOf } from "./screens/Explore";
@@ -29,6 +29,7 @@ import { ActionsCtx } from "./components/PlaceSections";
 import type { Actions } from "./components/PlaceSections";
 import { Toast, fmtDuration } from "./components/atlasBits";
 import { TabIcon } from "./components/Glyphs";
+import { CrashCard, ErrorBoundary } from "./components/ErrorBoundary";
 
 const TRAIL_BY_ID = new Map(TRAILS.map((t) => [t.id, t]));
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
@@ -168,6 +169,12 @@ export default function App() {
   const outPlace = placeByRef(out?.placeRef);
   const prompted = hikePrompt ? TRAIL_BY_ID.get(hikePrompt) : undefined;
   /* each sheet is its own scene: a trail in forest and parchment, a plant in sage and terracotta */
+  /* a broken screen or sheet shows a card instead of a blank page; the tab bar keeps working (see ErrorBoundary) */
+  const here = formatHash(route);
+  const atSafetyHome = route.tab === "safety" && !sheetOpen && Object.keys(route.params).length === 0;
+  const toSafety = atSafetyHome ? undefined : () => { returnFocus.current = null; nav.go({ tab: "safety", sheet: null, params: {} }); };
+  const screenCrash = (error: Error, retry: () => void) =>
+    <CrashCard what={route.tab === "safety" ? "safety" : "screen"} error={error} onRetry={retry} onSafety={toSafety} />;
   const sheetScene = trail || foundId ? "explore" : place ? place.kind : species || sheet?.type === "guide" ? "botany" : taxonId ? "identify" : "atlas";
 
   return (
@@ -204,15 +211,19 @@ export default function App() {
 
         <main className="tab-body" {...behindSheet}>
           <div hidden={route.tab !== "explore"}>
+            <ErrorBoundary resetKey={route.tab} fallback={screenCrash}>
             <Explore ref={exploreRef} log={log} patchLog={patchLog} origin={origin} onOrigin={chooseOrigin}
               radiusMi={radius} onRadius={chooseRadius} wx={wx} wxErr={wxErr} onRetryWx={refreshWeather}
               openTrailId={trail?.id ?? null} />
+            </ErrorBoundary>
           </div>
+          <ErrorBoundary resetKey={here} fallback={screenCrash}>
           {route.tab === "identify" && <Identify at={(placeByRef(route.params.at)?.ref) ?? null} near={origin} onDone={() => { nav.go({ tab: "atlas", sheet: null, params: {} }, { replace: true }); window.scrollTo({ top: 0 }); }} />}
           {route.tab === "atlas" && <Atlas log={log} />}
           {route.tab === "quests" && <Quests />}
           {route.tab === "safety" && <Safety params={route.params} origin={origin}
             go={(params, o) => nav.go({ tab: "safety", sheet: null, params }, o)} />}
+          </ErrorBoundary>
         </main>
 
         <nav className="tabbar" aria-label="Sections" {...behindSheet}>
@@ -244,6 +255,7 @@ export default function App() {
           <div className="sheet-scrim" onClick={closeSheet}>
             <div className="sheet" data-scene={sheetScene} role="dialog" aria-modal="true" aria-labelledby={trail || place ? "det-name" : undefined}
               aria-label={trail || place ? undefined : "Details"} onClick={(e) => e.stopPropagation()}>
+              <ErrorBoundary resetKey={here} fallback={(error, retry) => <CrashCard what="sheet" error={error} onRetry={retry} onSafety={toSafety} onClose={closeSheet} />}>
               {trail && (
                 <TrailDetail key={trail.id} t={trail} area={AREAS[trail.area]} start={start}
                   w={wx?.byTrail?.[trail.id] ?? null} p={log[trail.id] || {}}
@@ -256,6 +268,7 @@ export default function App() {
               {sheet?.type === "guide" && <GuideIndex onClose={closeSheet} />}
               {sheet?.type === "obs" && <ObservationSheet key={sheet.id} id={sheet.id} onClose={closeSheet} />}
               {sheet?.type === "outing" && <OutingSheet key={sheet.id} id={sheet.id} onClose={closeSheet} />}
+              </ErrorBoundary>
             </div>
           </div>
         )}

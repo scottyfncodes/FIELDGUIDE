@@ -24,7 +24,7 @@ const LOCATE_FAIL: Record<LocateFail, string> = {
   unsupported: "This browser can't share a location.",
   insecure: "Location only works over a secure connection.",
   denied: "Location is off for this site, so nothing was checked. You can allow it in Settings, Safari, Location, or check your search point instead.",
-  unavailable: "Your phone couldn't get a fix just now, so nothing was checked. Try again in the open.",
+  unavailable: "Your device couldn't get a fix just now, so nothing was checked. Try again in the open.",
   timeout: "Finding you took too long, so nothing was checked. Try again.",
 };
 type Results = Partial<{ [K in HazardKind]: HazardResult<K> }>;
