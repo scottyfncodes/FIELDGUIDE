@@ -1,0 +1,21 @@
+{"version": 1, "product": "app", "viewports": ["phone", "desktop"], "shots": [
+  {"id": "explore", "name": "Explore, first open", "kind": "title", "moment": "title-card", "steps": [],
+   "wait_for": {"selector": ".title-card .tc-range", "timeout_ms": 8000}},
+  {"id": "nature-id", "name": "Nature ID chooser", "kind": "screen", "steps": [{"goto": "#identify"}],
+   "wait_for": {"text": "What did you find?", "timeout_ms": 8000}},
+  {"id": "journal-empty", "name": "Field Journal, empty state", "kind": "screen", "steps": [{"goto": "#atlas"}],
+   "wait_for": {"text": "Your journal starts on the trail", "timeout_ms": 8000}},
+  {"id": "quests", "name": "Quests", "kind": "screen", "steps": [{"goto": "#quests"}],
+   "wait_for": {"text": "Five leaf shapes", "timeout_ms": 8000}},
+  {"id": "safety", "name": "Safety & Survival index", "kind": "screen", "steps": [{"goto": "#safety"}],
+   "wait_for": {"selector": "a.call-btn[href='tel:911']", "timeout_ms": 8000}},
+  {"id": "safety-flow", "name": "Triage question: severe bleeding", "kind": "screen", "steps": [{"goto": "#safety&flow=bleeding"}],
+   "wait_for": {"text": "Is blood spurting", "timeout_ms": 8000}},
+  {"id": "trail-sheet", "name": "Trail sheet: Green Mountain Loop", "kind": "screen", "steps": [{"goto": "#trail=greenmtn"}],
+   "wait_for": {"selector": "#det-name", "timeout_ms": 8000}},
+  {"id": "trail-logged", "name": "Marking a trail hiked: the LOGGED stamp", "kind": "moment", "moment": "logged-stamp",
+   "steps": [{"goto": "#trail=greenmtn"}, {"click": "Mark as hiked"}],
+   "wait_for": {"selector": ".stamp", "timeout_ms": 8000}, "sequence": {"after_ms": 900}},
+  {"id": "species", "name": "Plant page: Quaking aspen", "kind": "screen", "steps": [{"goto": "#atlas&species=quaking-aspen"}],
+   "wait_for": {"text": "Populus tremuloides", "timeout_ms": 8000}}
+]}
