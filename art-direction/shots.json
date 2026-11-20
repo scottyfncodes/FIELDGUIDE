@@ -14,7 +14,7 @@
   {"id": "trail-sheet", "name": "Trail sheet: Green Mountain Loop", "kind": "screen", "steps": [{"goto": "#trail=greenmtn"}],
    "wait_for": {"selector": "#det-name", "timeout_ms": 8000}},
   {"id": "trail-logged", "name": "Marking a trail hiked: the LOGGED stamp", "kind": "moment", "moment": "logged-stamp",
-   "steps": [{"goto": "#trail=greenmtn"}, {"click": "Mark as hiked"}],
+   "steps": [{"goto": "#trail=greenmtn"}, {"click": ".sheet .done-toggle"}],
    "wait_for": {"selector": ".stamp", "timeout_ms": 8000}, "sequence": {"after_ms": 900}},
   {"id": "species", "name": "Plant page: Quaking aspen", "kind": "screen", "steps": [{"goto": "#atlas&species=quaking-aspen"}],
    "wait_for": {"text": "Populus tremuloides", "timeout_ms": 8000}}
