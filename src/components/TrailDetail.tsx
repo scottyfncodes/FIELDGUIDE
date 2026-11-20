@@ -224,7 +224,7 @@ export function TrailDetail({ t, area, start, w, p, onPatch, onClose, onShowOnMa
           {start ? <>
             <b>{fmtMi(haversineMi(start.lat, start.lon, t.lat, t.lon))} away</b> in a straight line from {start.label}
             <br /><span>~{fmtDrive(drive)} drive: estimate, not routed</span>
-          </> : <span>Directions open in your map app with the real driving route.</span>}
+          </> : <span>Driving route opens in your map app.</span>}
         </div>
         <a className="dir-btn" href={directionsUrl(t.lat, t.lon)} target="_blank" rel="noreferrer">
           Directions to trailhead

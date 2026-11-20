@@ -62,6 +62,9 @@ body {
 }
 body.sheet-open { overflow: hidden; }
 button, select, input, textarea { font: inherit; color: inherit; }
+/* no one-word last lines: headings balance, reading text avoids orphans */
+h1, h2, h3, h4 { text-wrap: balance; }
+p, li { text-wrap: pretty; }
 button, a, label, select { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 button { cursor: pointer; }
 button:disabled { cursor: default; }
@@ -90,7 +93,7 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 .tally b { font-size: 15px; color: #F2B8A8; }
 .wx-btn {
   display: inline-flex; align-items: center; gap: 5px;
-  min-height: 36px; padding: 0 10px;
+  min-height: var(--tap); padding: 0 10px;
   font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
   background: transparent; color: var(--paper); border: 1.5px solid rgba(247, 243, 231, 0.55);
   white-space: nowrap;
@@ -273,7 +276,7 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 }
 .results-hd b { color: var(--ink); font-size: 13px; }
 .clear-btn {
-  min-height: 36px; padding: 0 12px; font-family: var(--mono); font-size: 12px; font-weight: 600;
+  min-height: var(--tap); padding: 0 12px; font-family: var(--mono); font-size: 12px; font-weight: 600;
   background: none; color: var(--quadred); border: 1.5px solid var(--quadred);
 }
 .notice { margin: 4px 2px; font-family: var(--mono); font-size: 12px; color: var(--poor); }
@@ -347,7 +350,7 @@ html[data-input="touch"] button:focus-visible { outline: none; }
   margin-top: 28px; padding-top: 12px; border-top: 3px double var(--ink);
   font-family: var(--mono); font-size: 12px; line-height: 1.7; color: var(--ink-soft);
 }
-.ft p { margin: 0 0 8px; }
+.ft p { margin: 0 0 8px; max-width: 70ch; }
 
 /* ---------- detail sheet ---------- */
 .sheet-scrim {
@@ -414,7 +417,7 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 .dir-btn::after { content: "↗"; margin-left: 8px; }
 .dir-btn:active { background: var(--pine-2); }
 .det-drive { flex: 1 1 140px; font-family: var(--mono); font-size: 13px; line-height: 1.4; }
-.det-drive span { font-size: 11px; color: var(--ink-soft); }
+.det-drive span { font-size: 12px; color: var(--ink-soft); }
 
 .det-wx { border: 2px solid var(--ink-faint); padding: 12px 14px; background: var(--paper-2); }
 .det-wx-good { border-color: var(--good); }
@@ -558,7 +561,7 @@ html[data-input="touch"] button:focus-visible { outline: none; }
 a { color: var(--pine); }
 .prov {
   display: inline-block; vertical-align: 1px; margin-left: 4px;
-  font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;
   padding: 0 5px; border: 1px solid currentColor; line-height: 1.6; white-space: nowrap;
 }
 h3 .prov { margin-left: 6px; }
@@ -636,7 +639,7 @@ h3 .prov { margin-left: 6px; }
 }
 .layer-tab + .layer-tab { border-left: 1.5px solid var(--pine); }
 .layer-tab.on { background: var(--pine); color: var(--paper); }
-.layer-note { font-size: 13px; color: var(--ink-soft); margin: 2px 2px 8px; }
+.layer-note { font-size: 13px; color: var(--ink-soft); margin: 2px 0 8px; }
 .mark-diamond .mark-tri, .mark-dot .mark-tri { stroke-width: 1.8; }
 .fol-early .mark-tri { fill: var(--fol-early); stroke: #2C4A28; }
 .fol-turning .mark-tri { fill: var(--fol-turning); stroke: #5E4808; }
@@ -1023,7 +1026,8 @@ h3 .prov { margin-left: 6px; }
   background: var(--paper); border-top: 3px double var(--ink);
 }
 .det-cta { flex-direction: column; align-items: stretch; gap: 6px; padding-top: 8px; }
-.det-cta .det-drive { flex: none; font-size: 11.5px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* wraps rather than clipping: a cut-off sentence reads as broken */
+.det-cta .det-drive { flex: none; font-size: 12px; min-width: 0; text-wrap: pretty; overflow-wrap: anywhere; }
 .det-cta .det-drive b { font-weight: 600; }
 .det-cta .dir-btn { flex: none; min-height: 50px; transition: background-color 0.15s, transform 0.12s; }
 .dir-btn:hover { background: var(--pine-2); border-color: var(--pine-2); }
@@ -1101,8 +1105,8 @@ h3 .prov { margin-left: 6px; }
 /* the app bar takes the scene's color; the change is the cut between scenes */
 .appbar { background: var(--scene); color: var(--scene-ink); border-bottom: 3px double var(--ink); transition: background-color 0.3s, color 0.3s; }
 .brand { justify-content: flex-start; }
-.brand h1 { font-family: var(--display); font-weight: 600; font-size: 16px; letter-spacing: 0.16em; font-stretch: normal; }
-@media (max-width: 430px) { .brand h1 { font-size: 15px; letter-spacing: 0.1em; } }
+.brand h1 { font-family: var(--display); font-weight: 600; font-size: 18px; letter-spacing: 0.16em; font-stretch: normal; }
+@media (max-width: 430px) { .brand h1 { font-size: 17px; letter-spacing: 0.1em; } }
 .brand-mark { color: var(--scene-accent); }
 .app[data-scene="identify"] .brand-mark, .app[data-scene="atlas"] .brand-mark, .app[data-scene="quests"] .brand-mark { color: var(--scene-deep); }
 .tally b { color: var(--scene-accent); }
@@ -1287,6 +1291,8 @@ h3 .prov { margin-left: 6px; }
 .lp-form .search { flex: 1; min-width: 0; margin: 0; }
 .lp-form .search input { font-size: 16px; } /* 16px keeps iOS Safari from zooming on focus */
 .lp-form .pa-btn { flex: none; }
+/* on the narrowest phones the magnifier gives its width back so the whole hint shows; the Search button names the action */
+@media (max-width: 380px) { .lp-form { gap: 6px; } .lp-form .search { padding-left: 9px; } .lp-form .search svg { display: none; } .lp-form .search input::placeholder { font-size: 14px; } .lp-form .pa-btn { padding: 0 12px; } }
 .lp-cancel { display: inline-block; margin-top: 10px; font-size: 13px; }
 .lp-msg { margin: 10px auto 0; max-width: 34em; padding: 8px 10px; font-size: 13.5px; text-align: left; border-left: 4px solid; }
 .lp-warn { border-color: var(--quadred); background: #F7E6DD; color: var(--ink); }
@@ -1461,9 +1467,9 @@ h3 .prov { margin-left: 6px; }
 }
 /* once a search point is set the panel steps back so the map sits higher */
 .locpanel-set .lp-from b { font-size: 16px; }
-.locpanel-set .pa-btn { min-height: 40px; padding: 0 10px; }
+.locpanel-set .pa-btn { min-height: var(--tap); padding: 0 10px; }
 .locpanel-set .lp-radius { margin-top: 8px; padding-top: 8px; }
-.locpanel-set .lp-r { min-height: 40px; min-width: 52px; }
+.locpanel-set .lp-r { min-height: var(--tap); min-width: 52px; }
 @media (max-width: 430px) { .locpanel-set .lp-summary-actions { width: 100%; } .locpanel-set .lp-summary-actions .pa-btn { flex: 1; } }
 
 /* ============================================================
@@ -1498,6 +1504,7 @@ h3 .prov { margin-left: 6px; }
 .safety p { overflow-wrap: anywhere; }
 .sa-status {
   margin: 0 auto 12px; max-width: 34em; text-align: center; font-family: var(--mono); font-size: 12.5px; color: var(--pine);
+  text-wrap: balance;
 }
 .sa-status::before { content: "● "; color: var(--good); }
 .sa-status.off { color: var(--ink); background: var(--marigold); padding: 8px 10px; border: 2px solid var(--ink); font-weight: 600; }
