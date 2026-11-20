@@ -46,7 +46,7 @@ export function PlaceDetail({ place, start, onClose }: Props) {
         <a className="dir-btn" href={directionsUrl(place.lat, place.lon)} target="_blank" rel="noreferrer">Directions</a>
         <div className="det-drive">{start
           ? <>{fmtMi(haversineMi(start.lat, start.lon, place.lat, place.lon))} away in a straight line from {start.label}<br /><span>~{fmtDrive(drive)} drive: estimate, not routed</span></>
-          : <span>Directions open in your map app with the real driving route.</span>}</div>
+          : <span>Driving route opens in your map app.</span>}</div>
       </div>
       <PlaceActions place={place} />
     </>
